@@ -1,0 +1,42 @@
+# GitHub Action for generating documentation with Sphinx and
+# publishing it to GitHub pages
+
+# Adapted from https://jupyterbook.org/publish/gh-pages.html
+
+name: publish-documentation
+
+# Run this action when chsanges are pushed to the main branch
+on:
+  push:
+    branches:
+      - main
+
+jobs:
+  # Publish the documentation on GitHub Pages
+  publish-documentation:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v2
+
+      # Install Python
+      - name: Set up Python 3.10
+        uses: actions/setup-python@v2
+        with:
+          python-version: 3.10.1
+
+      # Install dependencies for building the documentation
+      - name: Install dependencies
+        run: |
+          pip install -r requirements-dev.txt
+
+      # Build the documentation
+      - name: Build the documentation
+        run: |
+          sphinx-build docs _build
+
+      # Deploy the documentation to GitHub pages
+      - name: Push the documentation to the github pages branch
+        uses: peaceiris/actions-gh-pages@v3
+        with:
+          github_token: ${{ secrets.GITHUB_TOKEN }}
+          publish_dir: ./_build
