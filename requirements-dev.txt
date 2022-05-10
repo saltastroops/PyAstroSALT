@@ -7,6 +7,10 @@ mypy
 myst-nb
 numpydoc
 pytest
+pytest-asyncio
+requests
+responses
 sphinx
 sphinx-autodoc-typehints
 sphinx-book-theme
+websockets
