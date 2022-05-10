@@ -3,7 +3,7 @@ import io
 import pathlib
 from contextlib import contextmanager
 from datetime import datetime
-from typing import Any, Dict, Generator, List
+from typing import Any, Dict, Generator, List, Tuple
 from unittest.mock import patch
 from urllib.parse import urljoin
 
@@ -39,7 +39,7 @@ def test_submitted_proposal_file_must_be_a_file(tmp_path: pathlib.Path) -> None:
 
 
 @responses.activate
-def test_submitted_proposal_raises_http_errors():
+def test_submitted_proposal_raises_http_errors() -> None:
     """Test that submit raises an exception if there is an HTTP error."""
     rsp = responses.Response(
         method="POST", url=urljoin(SALT_API_URL, "/submissions/"), status=400
@@ -51,7 +51,7 @@ def test_submitted_proposal_raises_http_errors():
 
 
 @responses.activate
-def test_submit_works_correctly_for_memory_stream():
+def test_submit_works_correctly_for_memory_stream() -> None:
     """Test that submit works correctly for a proposal from an in-memory-stream."""
     rsp1 = responses.Response(
         method="POST",
@@ -114,7 +114,7 @@ def test_submit_works_correctly_for_real_file(tmp_path: pathlib.Path) -> None:
     assert submission_identifier == "submissionid"
 
 
-def _mock_submission_progress_data():
+def _mock_submission_progress_data() -> Tuple[List[Any], List[Any]]:
     dates = [
         "2022-05-04T16:08:16+00:00",
         "2022-05-04T16:08:18+00:00",
@@ -183,7 +183,7 @@ def _mock_submission_progress_data():
 
 
 @pytest.mark.asyncio
-async def test_submission_progress_works():
+async def test_submission_progress_works() -> None:
     """Test that the correct submission progress data is returned."""
     raw_data, expected_data = _mock_submission_progress_data()
 
@@ -208,7 +208,7 @@ async def test_submission_progress_works():
 
 
 @pytest.mark.asyncio
-async def test_submission_progress_reconnects():
+async def test_submission_progress_reconnects() -> None:
     """Test that a reconnection happens if there is a problem."""
     raw_data, expected_data = _mock_submission_progress_data()
 
@@ -247,7 +247,9 @@ def _does_not_raise() -> Generator[Any, None, None]:
 @pytest.mark.parametrize(
     "retries,expectation", [(6, _does_not_raise()), (7, pytest.raises(Exception))]
 )
-async def test_submission_progression_retries_max_retries_times(retries, expectation):
+async def test_submission_progression_retries_max_retries_times(
+    retries, expectation
+) -> None:
     """Test that there are max_retries attempts to reconnect if there is a problem."""
     counter_dict = {"counter": 0}
 
@@ -279,7 +281,7 @@ async def test_submission_progression_retries_max_retries_times(retries, expecta
 
 
 @pytest.mark.asyncio
-async def test_submission_progress_resets_num_of_retries():
+async def test_submission_progress_resets_num_of_retries() -> None:
     """Test that the number of retries is reset to 0 if data is returned."""
     counter_dict = {"counter": 0}
     max_retries = 3

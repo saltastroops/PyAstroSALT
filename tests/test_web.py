@@ -18,7 +18,7 @@ from saltastro.web import (
 
 @responses.activate
 @pytest.mark.parametrize("status_code", [400, 401, 403, 404, 500])
-def test_check_for_http_errors_uses_message_from_json_body(status_code: int):
+def test_check_for_http_errors_uses_message_from_json_body(status_code: int) -> None:
     """Test that check_for_http_error uses the message property, if it exists."""
     responses.add(
         method="GET",
@@ -50,7 +50,7 @@ def test_check_for_http_errors_uses_message_from_json_body(status_code: int):
 
 @responses.activate
 @pytest.mark.parametrize("status_code", [400, 401, 403, 404, 500])
-def test_check_for_http_errors_uses_error_from_json_body(status_code: int):
+def test_check_for_http_errors_uses_error_from_json_body(status_code: int) -> None:
     """Test that check_for_http_error uses the error property."""
     responses.add(
         method="GET",
@@ -69,7 +69,7 @@ def test_check_for_http_errors_uses_error_from_json_body(status_code: int):
 
 @responses.activate
 @pytest.mark.parametrize("status_code", [400, 401, 403, 404, 500])
-def test_check_for_http_errors_uses_generic_error_message(status_code: int):
+def test_check_for_http_errors_uses_generic_error_message(status_code: int) -> None:
     """Test that check_for_http_error uses the error property."""
     responses.add(
         method="GET",
@@ -118,7 +118,7 @@ def test_check_for_errors_does_nor_raise_for_non_error_codes(status_code: int) -
 
 
 @responses.activate
-def test_login():
+def test_login() -> None:
     """Test logging in."""
     rsp1 = responses.Response(
         method="POST",
@@ -151,7 +151,7 @@ def test_login():
 
 
 @responses.activate
-def test_login_checks_for_http_errors():
+def test_login_checks_for_http_errors() -> None:
     """Test that login raises an exception if there is an HTTP error."""
     rsp = responses.Response(
         method="POST",
@@ -173,7 +173,7 @@ def test_login_checks_for_http_errors():
 
 
 @responses.activate
-def test_logout():
+def test_logout() -> None:
     """Test logging out."""
     rsp1 = responses.Response(
         method="POST",
@@ -206,5 +206,6 @@ def test_logout():
 
     logout()
     with pytest.raises(requests.exceptions.ConnectionError):
-        # The connection should fail as no Authorization header is sent any longer.
+        # The connection should fail as no Authorization header is sent any longer,
+        # and hence no route for the mock responses is matched.
         SessionHandler.get_session().get("http://example.com/")

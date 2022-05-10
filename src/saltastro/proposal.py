@@ -156,13 +156,17 @@ async def submission_progress(
             await sleep(TIME_BETWEEN_RECONNECTION_ATTEMPTS)
             num_retries += 1
             if num_retries > max_retries:
+                # Pass on the previously caught exception
                 raise
 
 
 async def _submission_progress_server_input(
     submission_identifier: str, from_entry_number: int = 1
 ) -> AsyncGenerator[Any, None]:
-    url = f"ws://localhost:8001/submissions/{submission_identifier}/progress/ws?from_entry_number={int(from_entry_number)}"
+    url = (
+        f"ws://localhost:8001/submissions/{submission_identifier}/progress/ws"
+        f"?from_entry_number={int(from_entry_number)}"
+    )
     async with websockets.connect(url) as websocket:  # type: ignore
         await websocket.send(SessionHandler._access_token)
         try:
