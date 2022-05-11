@@ -175,3 +175,33 @@ async def _submission_progress_server_input(
                 yield json.loads(p)
         except websockets.exceptions.ConnectionClosedOK:  # type: ignore
             pass
+
+
+def download_zip(proposal_code: str, out: Union[pathlib.Path, str, BinaryIO]) -> None:
+    """
+    Download a proposal zip file.
+
+    The downloaded zip file is stored in the file or file-like object specified with the
+    ``out`` parameter. An existing file will be overwritten.
+
+    If ``out`` specifies a real file, that file is closed after the zip file has been
+    downloaded. However, an in-memory stream is not closed.
+
+    Parameters
+    ----------
+    proposal_code: str
+        Proposal code of the proposal to download.
+    out: path-like, file or file-like
+        File or file-like object in which to store the downloaded file.
+    """
+    session = SessionHandler.get_session()
+    is_stream = hasattr(out, "write")
+    f = cast(Any, out if is_stream else open(cast(Any, out), "wb"))
+    try:
+        url = urljoin(SALT_API_URL, f"/proposals/{proposal_code}.zip")
+        response = session.get(url, stream=True)
+        for chunk in response.iter_content(chunk_size=1024):
+            f.write(chunk)
+    finally:
+        if not is_stream:
+            f.close()

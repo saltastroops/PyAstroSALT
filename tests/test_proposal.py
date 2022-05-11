@@ -14,10 +14,12 @@ from responses import matchers
 from saltastro.proposal import (
     SubmissionLogMessageType,
     SubmissionStatus,
+    download_zip,
     submission_progress,
     submit,
 )
-from saltastro.web import SALT_API_URL, HttpStatusError, login
+from saltastro.web import SALT_API_URL, HttpStatusError
+from tests.conftest import login
 
 
 def test_submitted_proposal_file_must_exist() -> None:
@@ -53,14 +55,7 @@ def test_submitted_proposal_raises_http_errors() -> None:
 @responses.activate
 def test_submit_works_correctly_for_memory_stream() -> None:
     """Test that submit works correctly for a proposal from an in-memory-stream."""
-    rsp1 = responses.Response(
-        method="POST",
-        url=urljoin(SALT_API_URL, "/token/"),
-        json={"access_token": "secret"},
-    )
-    responses.add(rsp1)
-
-    rsp2 = responses.Response(
+    rsp = responses.Response(
         method="POST",
         url=urljoin(SALT_API_URL, "/submissions/"),
         json={"submission_identifier": "submissionid"},
@@ -72,9 +67,9 @@ def test_submit_works_correctly_for_memory_stream() -> None:
             ),
         ],
     )
-    responses.add(rsp2)
+    responses.add(rsp)
 
-    login("john", "topsecret")
+    login("secret")
     proposal = io.BytesIO(b"some content")
     submission_identifier = submit(proposal, "2022-1-SCI-042")
 
@@ -84,14 +79,7 @@ def test_submit_works_correctly_for_memory_stream() -> None:
 @responses.activate
 def test_submit_works_correctly_for_real_file(tmp_path: pathlib.Path) -> None:
     """Test that submit works correctly for a proposal from a file."""
-    rsp1 = responses.Response(
-        method="POST",
-        url=urljoin(SALT_API_URL, "/token/"),
-        json={"access_token": "secret"},
-    )
-    responses.add(rsp1)
-
-    rsp2 = responses.Response(
+    rsp = responses.Response(
         method="POST",
         url=urljoin(SALT_API_URL, "/submissions/"),
         json={"submission_identifier": "submissionid"},
@@ -103,12 +91,12 @@ def test_submit_works_correctly_for_real_file(tmp_path: pathlib.Path) -> None:
             ),
         ],
     )
-    responses.add(rsp2)
+    responses.add(rsp)
 
     proposal = tmp_path / "proposal.zip"
     proposal.write_bytes(b"fake proposal zip")
 
-    login("john", "topsecret")
+    login("secret")
     submission_identifier = submit(proposal, "2022-1-SCI-042")
 
     assert submission_identifier == "submissionid"
@@ -335,3 +323,49 @@ async def test_submission_progress_resets_num_of_retries() -> None:
                 received_data.append(p)
 
     assert received_data == expected_data
+
+
+@responses.activate
+def test_download_zip_into_file(tmp_path: pathlib.Path) -> None:
+    """Test downloading a proposal zip file into a file."""
+    proposal_code = "2022-1-SCI-005"
+    rsp = responses.Response(
+        method="GET",
+        url=urljoin(SALT_API_URL, f"/proposals/{proposal_code}.zip"),
+        content_type="application/zip",
+        body=b"This is a proposal.",
+        match=[
+            matchers.header_matcher({"Authorization": "Bearer secret"}),
+        ],
+    )
+    responses.add(rsp)
+
+    login("secret")
+    proposal_file = tmp_path / f"{proposal_code}.zip"
+    download_zip(proposal_code, proposal_file)
+
+    downloaded_content = proposal_file.read_bytes()
+    assert downloaded_content == b"This is a proposal."
+
+
+@responses.activate
+def test_download_zip_into_in_memory_stream() -> None:
+    """Test downloading a proposal zip file into an in-memory stream."""
+    proposal_code = "2022-1-SCI-005"
+    rsp = responses.Response(
+        method="GET",
+        url=urljoin(SALT_API_URL, f"/proposals/{proposal_code}.zip"),
+        content_type="application/zip",
+        body=b"This is a proposal.",
+        match=[
+            matchers.header_matcher({"Authorization": "Bearer secret"}),
+        ],
+    )
+    responses.add(rsp)
+
+    login("secret")
+    out = io.BytesIO()
+    download_zip(proposal_code, out)
+
+    downloaded_content = out.getvalue()
+    assert downloaded_content == b"This is a proposal."
