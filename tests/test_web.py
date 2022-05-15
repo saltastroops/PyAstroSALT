@@ -5,7 +5,7 @@ import pytest
 import requests
 import responses
 
-from saltastro.web import (
+from pyastrosalt.web import (
     DEFAULT_STATUS_CODE_ERRORS,
     SALT_API_URL,
     HttpStatusError,
@@ -167,7 +167,7 @@ def test_login_checks_for_http_errors() -> None:
     responses.add(rsp)
 
     mock = MagicMock()
-    with patch("saltastro.web.check_for_http_errors", mock):
+    with patch("pyastrosalt.web.check_for_http_errors", mock):
         login(username="john", password="secret")
         mock.assert_called()
 

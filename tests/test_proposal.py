@@ -11,14 +11,14 @@ import pytest
 import responses
 from responses import matchers
 
-from saltastro.proposal import (
+from pyastrosalt.proposal import (
     SubmissionLogMessageType,
     SubmissionStatus,
     download_zip,
     submission_progress,
     submit,
 )
-from saltastro.web import SALT_API_URL, HttpStatusError
+from pyastrosalt.web import SALT_API_URL, HttpStatusError
 from tests.conftest import login
 
 
@@ -182,12 +182,12 @@ async def test_submission_progress_works() -> None:
             yield r
 
     with patch(
-        "saltastro.proposal._submission_progress_server_input",
+        "pyastrosalt.proposal._submission_progress_server_input",
         _mock_submission_progress_server_input,
     ):
         # There should be no reconnection in this test, but we avoid waiting, just in
         # case things go pear-shaped and reconnection does happen.
-        with patch("saltastro.proposal.TIME_BETWEEN_RECONNECTION_ATTEMPTS", 0):
+        with patch("pyastrosalt.proposal.TIME_BETWEEN_RECONNECTION_ATTEMPTS", 0):
             received_data = []
             async for r in submission_progress("abc"):
                 received_data.append(r)
@@ -215,10 +215,10 @@ async def test_submission_progress_reconnects() -> None:
             yield r
 
     with patch(
-        "saltastro.proposal._submission_progress_server_input",
+        "pyastrosalt.proposal._submission_progress_server_input",
         _mock_submission_progress_server_input,
     ):
-        with patch("saltastro.proposal.TIME_BETWEEN_RECONNECTION_ATTEMPTS", 0):
+        with patch("pyastrosalt.proposal.TIME_BETWEEN_RECONNECTION_ATTEMPTS", 0):
             received_data = []
             async for r in submission_progress("abc"):
                 received_data.append(r)
@@ -260,10 +260,10 @@ async def test_submission_progression_retries_max_retries_times(
 
     with expectation:
         with patch(
-            "saltastro.proposal._submission_progress_server_input",
+            "pyastrosalt.proposal._submission_progress_server_input",
             _mock_submission_progress_server_input,
         ):
-            with patch("saltastro.proposal.TIME_BETWEEN_RECONNECTION_ATTEMPTS", 0):
+            with patch("pyastrosalt.proposal.TIME_BETWEEN_RECONNECTION_ATTEMPTS", 0):
                 async for _ in submission_progress("abc", max_retries=5):
                     pass
 
@@ -314,10 +314,10 @@ async def test_submission_progress_resets_num_of_retries() -> None:
     ]
 
     with patch(
-        "saltastro.proposal._submission_progress_server_input",
+        "pyastrosalt.proposal._submission_progress_server_input",
         _mock_submission_progress_server_input,
     ):
-        with patch("saltastro.proposal.TIME_BETWEEN_RECONNECTION_ATTEMPTS", 0):
+        with patch("pyastrosalt.proposal.TIME_BETWEEN_RECONNECTION_ATTEMPTS", 0):
             received_data = []
             async for p in submission_progress("abc", max_retries):
                 received_data.append(p)

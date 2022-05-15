@@ -3,11 +3,11 @@ from urllib.parse import urljoin
 import pytest
 import responses
 
-import saltastro.web
+import pyastrosalt.web
 
 # Prevent accidental real HTTP requests.
 # Source: https://blog.jerrycodes.com/no-http-requests/
-from saltastro.web import SALT_API_URL
+from pyastrosalt.web import SALT_API_URL
 
 
 @pytest.fixture(autouse=True)
@@ -42,4 +42,4 @@ def login(token: str):
     )
     responses.add(rsp)
 
-    saltastro.web.login("joe", token)
+    pyastrosalt.web.login("joe", token)

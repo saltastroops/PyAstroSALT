@@ -10,7 +10,7 @@ SALT_API_URL = "http://localhost:8001"
 
 DEFAULT_STATUS_CODE_ERRORS = {
     400: "It seems there was a problem with your input.",
-    401: "You are not authenticated. Please use saltastro.web.login to authenticate.",
+    401: "You are not authenticated. Please use pyastrosalt.web.login to authenticate.",
     403: "You are not allowed to perform this action.",
     404: "The required API endpoint could not be found. Please contact SALT.",
     500: "An internal server error has occurred. Please contact SALT.",
@@ -85,7 +85,7 @@ def login(username: str, password: str) -> None:
 
     This function requests an API token from the server. This token is automatically
     added to all requests made with the `~requests.Session` object returned by the
-    `~saltastro.web.session` function.
+    `~pyastrosalt.web.session` function.
 
     Parameters
     ----------
@@ -110,7 +110,7 @@ def logout() -> None:
     Log out from the SALT server.
 
     This function removes the API token from the `requests.Session` object returned by
-    the `~saltastro.web.session` function.
+    the `~pyastrosalt.web.session` function.
     """
     SessionHandler.delete_access_token()
 
@@ -120,7 +120,7 @@ def check_for_http_errors(response: requests.Response) -> None:
     Raise an error if the given response has an HTTP error status code.
 
     If the given response has an HTTP code of 400 or above, an
-    `~saltastro.web.HttpStatusError` is raised, which contains the status code and an
+    `~pyastrosalt.web.HttpStatusError` is raised, which contains the status code and an
     error message. The message is determined as follows:
 
     * If the response body is a JSON object and has a message property, the value of

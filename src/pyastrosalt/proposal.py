@@ -9,7 +9,7 @@ from urllib.parse import urljoin
 
 import websockets
 
-from saltastro.web import SALT_API_URL, SessionHandler, check_for_http_errors
+from pyastrosalt.web import SALT_API_URL, SessionHandler, check_for_http_errors
 
 TIME_BETWEEN_RECONNECTION_ATTEMPTS = 10
 
@@ -47,7 +47,7 @@ def submit(
     This method only checks whether the file exists; any further checks are done by the
     server to which it is submitted. If there is an upfront problem, such as if you are
     not authenticated or you submit a file which isn't a zip file, the HTTP request
-    fails and this function raises an `~saltastro.web.HttpStatusError`. Otherwise, a
+    fails and this function raises an `~pyastrosalt.web.HttpStatusError`. Otherwise, a
     unique identifier for the submission is returned.
 
     The fact that you receive a submission identifier does not imply that the submission
@@ -55,7 +55,7 @@ def submit(
     attempt to map it to the database is made. As validation checks are done as part of
     the mapping process, your proposal might still be found to be invalid.
 
-    You can use the function `~saltastro.proposal.submission_progress` to monitor the
+    You can use the function `~pyastrosalt.proposal.submission_progress` to monitor the
     progress of the submission.
 
     Parameters
@@ -129,7 +129,7 @@ async def submission_progress(
 
     Yields
     ------
-    `~saltastro.proposal.SubmissionProgressDetails`
+    `~pyastrosalt.proposal.SubmissionProgressDetails`
          Update on the submission progress.
     """
     received_log_entries = 0
