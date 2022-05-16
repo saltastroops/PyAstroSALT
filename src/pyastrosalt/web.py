@@ -89,9 +89,9 @@ def check_for_http_errors(response: requests.Response) -> None:
     error message. The message is determined as follows:
 
     * If the response body is a JSON object and has a message property, the value of
-    that property is used.
+      that property is used.
     * Otherwise, if the the response body is a JSON object and has an error property,
-    the value of that property is used.
+      the value of that property is used.
     * Otherwise a generic message based on the status code is used.
 
     Parameters
