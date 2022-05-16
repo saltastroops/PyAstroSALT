@@ -4,7 +4,7 @@
 
 ### Publishing manually
 
-In order to publish saltastro from your machine, first install twine, if you haven't done so already:
+In order to publish PyAstroSALT from your machine, first install twine, if you haven't done so already:
 
 ```shell
 pipx install twine

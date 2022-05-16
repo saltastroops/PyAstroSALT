@@ -9,5 +9,7 @@ maxdepth: 2
 caption: Content
 ---
 
+quickstart
+api
 development
 ```
