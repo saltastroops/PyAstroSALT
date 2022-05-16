@@ -1,3 +1,4 @@
+import os
 from typing import Optional, cast
 
 import requests
@@ -5,7 +6,7 @@ import requests
 # TODO: Replace with correct URL.
 
 
-SALT_API_URL = "http://localhost:8001"
+SALT_API_URL = os.environ.get("PYASTROSALT_API_SERVER", "http://localhost42:8001")
 
 
 DEFAULT_STATUS_CODE_ERRORS = {
@@ -109,7 +110,7 @@ def check_for_http_errors(response: requests.Response) -> None:
             message = str(json["message"])
         elif "error" in json:
             message = str(json["error"])
-    except requests.exceptions.JSONDecodeError:
+    except Exception:
         pass
 
     if message is None:
