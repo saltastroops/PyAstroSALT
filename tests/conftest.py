@@ -3,6 +3,7 @@ from urllib.parse import urljoin
 import pytest
 import responses
 
+import pyastrosalt.auth
 import pyastrosalt.web
 
 # Prevent accidental real HTTP requests.
@@ -42,4 +43,4 @@ def login(token: str):
     )
     responses.add(rsp)
 
-    pyastrosalt.web.login("joe", token)
+    pyastrosalt.auth.login("joe", token)
