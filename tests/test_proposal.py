@@ -369,3 +369,28 @@ def test_download_zip_into_in_memory_stream() -> None:
 
     downloaded_content = out.getvalue()
     assert downloaded_content == b"This is a proposal."
+
+
+@responses.activate
+@pytest.mark.parametrize("status_code", [400, 401, 403, 404, 500])
+def test_download_zip_raises_http_error(status_code) -> None:
+    """Test downloading a proposal zip file into an in-memory stream."""
+    proposal_code = "idontexist"
+    rsp = responses.Response(
+        method="GET",
+        url=urljoin(SALT_API_URL, f"/proposals/{proposal_code}.zip"),
+        status=status_code,
+        content_type="application/zip",
+        body=b"Something is wrong.",
+        match=[
+            matchers.header_matcher({"Authorization": "Bearer secret"}),
+        ],
+    )
+    responses.add(rsp)
+
+    login("secret")
+    out = io.BytesIO()
+    with pytest.raises(HttpStatusError) as excinfo:
+        download_zip(proposal_code, out)
+
+    assert excinfo.value.status_code == status_code

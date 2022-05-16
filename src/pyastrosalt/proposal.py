@@ -200,6 +200,7 @@ def download_zip(proposal_code: str, out: Union[pathlib.Path, str, BinaryIO]) ->
     try:
         url = urljoin(SALT_API_URL, f"/proposals/{proposal_code}.zip")
         response = session.get(url, stream=True)
+        check_for_http_errors(response)
         for chunk in response.iter_content(chunk_size=1024):
             f.write(chunk)
     finally:
