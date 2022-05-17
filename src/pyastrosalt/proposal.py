@@ -41,9 +41,8 @@ def submit(
     Submit a proposal.
 
     The proposal must be a zip file in a format understood by the script mapping
-    proposals to SALT's Science Database; see the documentation for details. The easiest
-    way to create such a file is to export the proposal as a zip file in the Principal
-    Investigator Proposal Tool.
+    proposals to SALT's Science Database. The easiest way to create such a file is to
+    export the proposal as a zip file in the Principal Investigator Proposal Tool.
 
     You may optionally specify a proposal code. If you do so and the proposal file
     contains a proposal code, the two proposal codes must be the same.
@@ -64,9 +63,9 @@ def submit(
 
     Parameters
     ----------
-    proposal: path-like, file or file-like
+    proposal : path-like, file or file-like
         The proposal file to submit.
-    proposal_code: str, optional
+    proposal_code : str, optional
         The proposal code of the submitted proposal.
 
     Returns
@@ -105,10 +104,10 @@ async def submission_progress(
     submission_identifier: str, max_retries: int = 5
 ) -> AsyncGenerator[Dict[str, Any], None]:
     """
-    Monitor progress of a proposal submission.
+    Monitor the progress of a proposal submission.
 
     This generator tracks the progress of the submission with the given identifier. You
-    must have initiated the submission to track; other users are denied access.
+    must have initiated the submission to track it; other users are denied access.
 
     When the generator connects to the submission server, it receives the current status
     of the submission as well as all the submission log entries. Afterwards it receives
@@ -120,20 +119,48 @@ async def submission_progress(
     generator. Once the connection is closed by the server, any remaining messages are
     yielded and the generator is stopped.
 
-    In case of unexpected errors the generator reconnects (up to ``max_retries`` times,
-    asking to omit any log entries received already.
+    The items yielded by the generator are dictionaries with the following content:
+
+    .. list-table::
+
+       * - Key
+         - Value
+       * - ``status``
+         - The submission status. This is an instance of `SubmissionStatus`.
+       * - ``log_entries``
+         - A list of the (new) log entries. See below for their content.
+       * - ``proposal_code``
+         - The proposal code for the submitted proposal. It is only included in the
+           dictionary if the submission has been successful.
+
+    Each log entry is a dictionary with the following content:
+
+    .. list-table::
+
+       * - Key
+         - Value
+       * - ``logged_at``
+         - The date and time when the log entry was made. This is a timezone-aware
+           `~datetime.datetime` object.
+       * - ``message_type``
+         - The type of log message. This is a `SubmissionLogMessageType` instance.
+       * - ``message``
+         - The log message.
+
+    In case of unexpected errors the generator reconnects (up to ``max_retries`` times),
+    asking the API server to omit any log entries received already.
 
     Parameters
     ----------
-    submission_identifier: str
+    submission_identifier : str
         The unique identifier of the submission.
-    max_retries: int, optional, default 5
+    max_retries : int, optional, default 5
         Maximum number of attempts the generator will make to reconnect to the server if
         necessary. This number does not include the initial connection.
 
     Yields
     ------
-    `~pyastrosalt.proposal.SubmissionProgressDetails`
+    `dict`
          Update on the submission progress.
     """
     received_log_entries = 0
@@ -189,13 +216,13 @@ def download_zip(proposal_code: str, out: Union[pathlib.Path, str, BinaryIO]) ->
     ``out`` parameter. An existing file will be overwritten.
 
     If ``out`` specifies a real file, that file is closed after the zip file has been
-    downloaded. However, an in-memory stream is not closed.
+    downloaded. However, an in-memory stream is not closed; it is rewound instead.
 
     Parameters
     ----------
-    proposal_code: str
+    proposal_code : str
         Proposal code of the proposal to download.
-    out: path-like, file or file-like
+    out : path-like, file or file-like
         File or file-like object in which to store the downloaded file.
     """
     with TemporaryFile() as tmp_file:
@@ -220,6 +247,8 @@ def download_zip(proposal_code: str, out: Union[pathlib.Path, str, BinaryIO]) ->
         finally:
             if not is_stream:
                 f.close()
+            else:
+                f.seek(0)
 
 
 def _download_zip(proposal_code: str, f: BinaryIO) -> None:

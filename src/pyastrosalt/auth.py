@@ -11,14 +11,14 @@ def login(username: str, password: str) -> None:
 
     This function requests an API token from the server. This token is automatically
     added to all requests made with the `~requests.Session` object returned by the
-    `~pyastrosalt.web.session` function.
+    `~pyastrosalt.web.SessionHandler.get_session` function.
 
     Parameters
     ----------
-    username: str
+    username : str
         The username, as used in the SALT Web Manager or Principal Investigator Proposal
         Tool.
-    password: str
+    password : str
         The password, as used in the SALT Web Manager or Principal Investigator Proposal
         Tool.
     """
@@ -35,7 +35,7 @@ def logout() -> None:
     """
     Log out from the SALT server.
 
-    This function removes the API token from the `requests.Session` object returned by
-    the `~pyastrosalt.web.session` function.
+    This function removes the API token from the `~requests.Session` object returned by
+    the `~pyastrosalt.web.SessionHandler.get_session` function.
     """
     SessionHandler.delete_access_token()

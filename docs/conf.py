@@ -29,5 +29,6 @@ intersphinx_mapping = {
     'numpy': ('https://numpy.org/doc/stable/', None),
     'scipy': ('https://docs.scipy.org/doc/scipy/reference/', None),
     'matplotlib': ('https://matplotlib.org/', None),
-    'astropy': ('https://docs.astropy.org/en/stable/', None)
+    'astropy': ('https://docs.astropy.org/en/stable/', None),
+    'requests': ('https://docs.python-requests.org/en/latest/', None)
 }

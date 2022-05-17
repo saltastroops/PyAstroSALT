@@ -364,7 +364,6 @@ def _fake_zip_file(proposal_code: str, text: str) -> bytes:
     proposal_content = io.BytesIO()
     with zipfile.ZipFile(proposal_content, "w") as z:
         z.writestr("Proposal.xml", xml)
-    proposal_content.seek(0)
 
     return proposal_content.getvalue()
 

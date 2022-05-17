@@ -27,7 +27,7 @@ class SessionHandler:
     @classmethod
     def get_session(cls) -> requests.Session:
         """
-        Return the requests session for making HTTP API requests.
+        Return the `~requests.Session` for making HTTP API requests.
 
         Returns
         -------
@@ -39,11 +39,12 @@ class SessionHandler:
     @classmethod
     def set_access_token(cls, access_token: str) -> None:
         """
-        Make sure the requests session sends an Authorization header.
+        Make sure the `~requests.Session` returned by the `get_session` method sends an
+        Authorization header.
 
         Parameters
         ----------
-        access_token: str
+        access_token : str
             The access token to pass in the Authorization header.
         """
         cls._access_token = access_token
@@ -51,7 +52,10 @@ class SessionHandler:
 
     @classmethod
     def delete_access_token(cls) -> None:
-        """Make sure the requests session does not send an Authorization header."""
+        """
+        Make sure the `~requests.Session` returned by the `get_session` method does
+        not send an Authorization header.
+        """
         cls._access_token = None
         del cls._session.headers["Authorization"]
 
@@ -62,17 +66,17 @@ class HttpStatusError(BaseException):
 
     Parameters
     ----------
-    status_code: int
+    status_code : int
         HTTP status code.
-    message: str
-        Error message
+    message : str
+        Error message.
 
     Attributes
     ----------
-    status_code: int
+    status_code : int
         HTTP status code.
-    message: str
-        Error message
+    message : str
+        Error message.
     """
 
     def __init__(self, status_code: int, message: str):
@@ -84,19 +88,19 @@ def check_for_http_errors(response: requests.Response) -> None:
     """
     Raise an error if the given response has an HTTP error status code.
 
-    If the given response has an HTTP code of 400 or above, an
+    If the response has an HTTP code of 400 or above, an
     `~pyastrosalt.web.HttpStatusError` is raised, which contains the status code and an
     error message. The message is determined as follows:
 
-    * If the response body is a JSON object and has a message property, the value of
+    * If the response body is a JSON object and has a ``message`` property, the value of
       that property is used.
-    * Otherwise, if the the response body is a JSON object and has an error property,
-      the value of that property is used.
+    * Otherwise, if the the response body is a JSON object and has an ``error``
+      property, the value of that property is used.
     * Otherwise a generic message based on the status code is used.
 
     Parameters
     ----------
-    response: `requests.Response`
+    response : `requests.Response`
         HTTP response.
     """
     status_code = response.status_code
