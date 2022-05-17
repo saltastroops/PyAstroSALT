@@ -1,11 +1,15 @@
 import copy
 import json
 import pathlib
+import zipfile
 from asyncio import sleep
 from datetime import datetime
 from enum import Enum
+from io import BytesIO
+from tempfile import TemporaryFile
 from typing import Any, AsyncGenerator, BinaryIO, Dict, Optional, Union, cast
 from urllib.parse import urljoin
+from xml.etree import ElementTree as ET
 
 import websockets
 
@@ -194,15 +198,53 @@ def download_zip(proposal_code: str, out: Union[pathlib.Path, str, BinaryIO]) ->
     out: path-like, file or file-like
         File or file-like object in which to store the downloaded file.
     """
+    with TemporaryFile() as tmp_file:
+        _download_zip(proposal_code, cast(Any, tmp_file))
+
+        is_stream = hasattr(out, "write")
+        f = cast(Any, out if is_stream else open(cast(Any, out), "wb"))
+        try:
+            # Loop over all files in the downloaded zip file and store them in a new zip
+            # file. In case of the proposal XML file the proposal code is updated (as it
+            # might be of the form "Unsubmitted-...", but should be the correct proposal
+            # code.
+            with zipfile.ZipFile(tmp_file, "r") as zip_in:
+                with zipfile.ZipFile(f, "w") as zip_out:
+                    for name in zip_in.namelist():
+                        if name == "Proposal.xml":
+                            original_data = zip_in.read(name)
+                            data = _update_proposal_code(original_data, proposal_code)
+                        else:
+                            data = zip_in.read(name)
+                        zip_out.writestr(name, data)
+        finally:
+            if not is_stream:
+                f.close()
+
+
+def _download_zip(proposal_code: str, f: BinaryIO) -> None:
     session = SessionHandler.get_session()
-    is_stream = hasattr(out, "write")
-    f = cast(Any, out if is_stream else open(cast(Any, out), "wb"))
-    try:
-        url = urljoin(SALT_API_URL, f"/proposals/{proposal_code}.zip")
-        response = session.get(url, stream=True)
-        check_for_http_errors(response)
-        for chunk in response.iter_content(chunk_size=1024):
-            f.write(chunk)
-    finally:
-        if not is_stream:
-            f.close()
+    url = urljoin(SALT_API_URL, f"/proposals/{proposal_code}.zip")
+    response = session.get(url, stream=True)
+    check_for_http_errors(response)
+    for chunk in response.iter_content(chunk_size=1024):
+        f.write(chunk)
+
+    # "Rewind" the stream, as otherwise only an empty string would be returned when the
+    # stream is read.
+    f.seek(0)
+
+
+def _update_proposal_code(proposal_xml: bytes, proposal_code: str) -> bytes:
+    # Replace the proposal code in the XML with the given one.
+    tree = ET.parse(BytesIO(proposal_xml))
+    root = tree.getroot()
+    root.set("code", proposal_code)
+    out = BytesIO()
+    tree.write(out)
+
+    # "Rewind" the stream, as otherwise only an empty string would be returned when the
+    # stream is read.
+    out.seek(0)
+
+    return out.getvalue()

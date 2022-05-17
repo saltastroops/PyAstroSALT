@@ -1,6 +1,7 @@
 import copy
 import io
 import pathlib
+import zipfile
 from contextlib import contextmanager
 from datetime import datetime
 from typing import Any, Dict, Generator, List, Tuple
@@ -325,6 +326,11 @@ async def test_submission_progress_resets_num_of_retries() -> None:
     assert received_data == expected_data
 
 
+def _proposal_xml(proposal_zip: bytes) -> bytes:
+    with zipfile.ZipFile(io.BytesIO(proposal_zip), "r") as zip_in:
+        return zip_in.read("Proposal.xml")
+
+
 @responses.activate
 def test_download_zip_into_file(tmp_path: pathlib.Path) -> None:
     """Test downloading a proposal zip file into a file."""
@@ -333,7 +339,7 @@ def test_download_zip_into_file(tmp_path: pathlib.Path) -> None:
         method="GET",
         url=urljoin(SALT_API_URL, f"/proposals/{proposal_code}.zip"),
         content_type="application/zip",
-        body=b"This is a proposal.",
+        body=_fake_zip_file(proposal_code, "This is a proposal."),
         match=[
             matchers.header_matcher({"Authorization": "Bearer secret"}),
         ],
@@ -345,7 +351,22 @@ def test_download_zip_into_file(tmp_path: pathlib.Path) -> None:
     download_zip(proposal_code, proposal_file)
 
     downloaded_content = proposal_file.read_bytes()
-    assert downloaded_content == b"This is a proposal."
+    assert b"This is a proposal." in _proposal_xml(downloaded_content)
+
+
+def _fake_zip_file(proposal_code: str, text: str) -> bytes:
+    xml = f"""\
+<?xml version="1.0" encoding="UTF-8" standalone="yes"?>
+<Proposal xmlns="http://www.salt.ac.za/PIPT/Proposal/Phase2/4.8" code="{proposal_code}">
+    {text}
+</Proposal>
+    """
+    proposal_content = io.BytesIO()
+    with zipfile.ZipFile(proposal_content, "w") as z:
+        z.writestr("Proposal.xml", xml)
+    proposal_content.seek(0)
+
+    return proposal_content.getvalue()
 
 
 @responses.activate
@@ -356,7 +377,7 @@ def test_download_zip_into_in_memory_stream() -> None:
         method="GET",
         url=urljoin(SALT_API_URL, f"/proposals/{proposal_code}.zip"),
         content_type="application/zip",
-        body=b"This is a proposal.",
+        body=_fake_zip_file(proposal_code, "This is a proposal."),
         match=[
             matchers.header_matcher({"Authorization": "Bearer secret"}),
         ],
@@ -368,7 +389,7 @@ def test_download_zip_into_in_memory_stream() -> None:
     download_zip(proposal_code, out)
 
     downloaded_content = out.getvalue()
-    assert downloaded_content == b"This is a proposal."
+    assert b"This is a proposal." in _proposal_xml(downloaded_content)
 
 
 @responses.activate
@@ -394,3 +415,29 @@ def test_download_zip_raises_http_error(status_code) -> None:
         download_zip(proposal_code, out)
 
     assert excinfo.value.status_code == status_code
+
+
+@responses.activate
+def test_download_zip_updates_proposal_code():
+    """Test that the proposal code is updated in the downloaded zip file."""
+    proposal_code = "2022-1-SCI-042"
+    rsp = responses.Response(
+        method="GET",
+        url=urljoin(SALT_API_URL, f"/proposals/{proposal_code}.zip"),
+        content_type="application/zip",
+        body=_fake_zip_file("Unsubmitted-002", "This is a proposal."),
+        match=[
+            matchers.header_matcher({"Authorization": "Bearer secret"}),
+        ],
+    )
+    responses.add(rsp)
+
+    login("secret")
+
+    proposal_content = io.BytesIO()
+    download_zip(proposal_code, proposal_content)
+
+    with zipfile.ZipFile(proposal_content, "r") as z:
+        xml = z.read("Proposal.xml")
+        code_attribute = f'code="{proposal_code}"'.encode("UTF-8")
+        assert code_attribute in xml
