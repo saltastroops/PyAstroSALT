@@ -1,10 +1,11 @@
+import contextlib
+from typing import Any, Generator
 from urllib.parse import urljoin
 
 import pytest
 import responses
 
-import pyastrosalt.auth
-import pyastrosalt.web
+from pyastrosalt.auth import login as auth_login
 
 # Prevent accidental real HTTP requests.
 # Source: https://blog.jerrycodes.com/no-http-requests/
@@ -43,4 +44,14 @@ def login(token: str):
     )
     responses.add(rsp)
 
-    pyastrosalt.auth.login("joe", token)
+    auth_login("joe", token)
+
+
+@contextlib.contextmanager
+def does_not_raise() -> Generator[Any, None, None]:
+    """
+    Yield nothing.
+
+    This generator cam be used to test that no exception is raised.
+    """
+    yield

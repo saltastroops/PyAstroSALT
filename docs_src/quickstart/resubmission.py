@@ -50,7 +50,7 @@ def updated_proposal(content: BytesIO) -> BytesIO:
                     data = zip_in.read(path)
                     zip_out.writestr(path, data)
 
-    # "Rewind" the stream. Otherwise you would only get an empty byte string when
+    # "Rewind" the stream. Otherwise, you would only get an empty byte string when
     # reading from the stream.
     updated_content.seek(0)
 

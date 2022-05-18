@@ -2,7 +2,6 @@ import copy
 import io
 import pathlib
 import zipfile
-from contextlib import contextmanager
 from datetime import datetime
 from typing import Any, Dict, Generator, List, Tuple
 from unittest.mock import patch
@@ -20,7 +19,7 @@ from pyastrosalt.proposal import (
     submit,
 )
 from pyastrosalt.web import SALT_API_URL, HttpStatusError
-from tests.conftest import login
+from tests.conftest import does_not_raise, login
 
 
 def test_submitted_proposal_file_must_exist() -> None:
@@ -227,14 +226,9 @@ async def test_submission_progress_reconnects() -> None:
     assert len(received_data) == len(expected_data)
 
 
-@contextmanager
-def _does_not_raise() -> Generator[Any, None, None]:
-    yield
-
-
 @pytest.mark.asyncio
 @pytest.mark.parametrize(
-    "retries,expectation", [(6, _does_not_raise()), (7, pytest.raises(Exception))]
+    "retries,expectation", [(6, does_not_raise()), (7, pytest.raises(Exception))]
 )
 async def test_submission_progression_retries_max_retries_times(
     retries, expectation

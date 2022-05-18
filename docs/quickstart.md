@@ -66,7 +66,7 @@ emphasize-lines: 2
 ---
 ```
 
-In the following sections we discuss the various stepos of our game plan in more detail.
+In the following sections we discuss the various steps of our game plan in more detail.
 
 ### Logging in
 
@@ -84,7 +84,7 @@ Technically, the `login` functions requests an authentication token from the ser
 
 ### Downloading a proposal
 
-Every SALT proposal is uniquely identified by its proposal code, which is an identifier consistin g of a year, semester, proposal type and running number. The example we use in the example code is `2022-1-DDT-002`.
+Every SALT proposal is uniquely identified by its proposal code, which is an identifier consisting of a year, semester, proposal type and running number. The example we use in the example code is `2022-1-DDT-002`.
 
 The whole proposal content can be downloaded as a zip file using the `download_zip` function.
 

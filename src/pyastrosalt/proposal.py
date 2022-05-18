@@ -199,7 +199,7 @@ async def _submission_progress_server_input(
         f"?from_entry_number={int(from_entry_number)}"
     )
     async with websockets.connect(url) as websocket:  # type: ignore
-        await websocket.send(SessionHandler._access_token)
+        await websocket.send(SessionHandler.get_access_token())
         try:
             while True:
                 p = await websocket.recv()
@@ -233,8 +233,8 @@ def download_zip(proposal_code: str, out: Union[pathlib.Path, str, BinaryIO]) ->
         try:
             # Loop over all files in the downloaded zip file and store them in a new zip
             # file. In case of the proposal XML file the proposal code is updated (as it
-            # might be of the form "Unsubmitted-...", but should be the correct proposal
-            # code.
+            # might be of the form "Unsubmitted-..."), but should be the correct
+            # proposal code.
             with zipfile.ZipFile(tmp_file, "r") as zip_in:
                 with zipfile.ZipFile(f, "w") as zip_out:
                     for name in zip_in.namelist():

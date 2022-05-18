@@ -37,6 +37,17 @@ class SessionHandler:
         return cls._session
 
     @classmethod
+    def get_access_token(cls) -> Optional[str]:
+        """
+        Return the access token used for authenticating.
+
+        Returns
+        -------
+        str, optional
+            The access token.
+        """
+
+    @classmethod
     def set_access_token(cls, access_token: str) -> None:
         """
         Make sure the `~requests.Session` returned by the `get_session` method sends an
@@ -94,9 +105,9 @@ def check_for_http_errors(response: requests.Response) -> None:
 
     * If the response body is a JSON object and has a ``message`` property, the value of
       that property is used.
-    * Otherwise, if the the response body is a JSON object and has an ``error``
+    * Otherwise, if the response body is a JSON object and has an ``error``
       property, the value of that property is used.
-    * Otherwise a generic message based on the status code is used.
+    * Otherwise, a generic message based on the status code is used.
 
     Parameters
     ----------

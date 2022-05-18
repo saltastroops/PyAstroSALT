@@ -7,6 +7,7 @@ from pyastrosalt.web import (
     HttpStatusError,
     check_for_http_errors,
 )
+from tests.conftest import does_not_raise
 
 
 @responses.activate
@@ -96,7 +97,7 @@ def test_check_for_http_errors_uses_generic_error_message(status_code: int) -> N
 
 @responses.activate
 @pytest.mark.parametrize("status_code", [200, 201, 204, 300, 304])
-def test_check_for_errors_does_nor_raise_for_non_error_codes(status_code: int) -> None:
+def test_check_for_errors_does_not_raise_for_non_error_codes(status_code: int) -> None:
     """Test that check_for_http_error uses a generic message if necessary."""
     responses.add(
         method="GET",
@@ -105,6 +106,6 @@ def test_check_for_errors_does_nor_raise_for_non_error_codes(status_code: int) -
         status=status_code,
     )
 
-    requests.get("http://example.com")
-
-    assert True
+    response = requests.get("http://example.com")
+    with does_not_raise():
+        check_for_http_errors(response)
