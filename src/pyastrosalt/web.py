@@ -46,6 +46,7 @@ class SessionHandler:
         str, optional
             The access token.
         """
+        return SessionHandler._access_token
 
     @classmethod
     def set_access_token(cls, access_token: str) -> None:
