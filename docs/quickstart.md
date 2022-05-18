@@ -84,7 +84,7 @@ Technically, the `login` functions requests an authentication token from the ser
 
 ### Downloading a proposal
 
-Every SALT proposal is uniquely identified by its proposal code, which is an identifier consisting of a year, semester, proposal type and running number. The example we use in the example code is `2022-1-DDT-002`.
+Every SALT proposal is uniquely identified by its proposal code, which is an identifier consisting of a year, semester, proposal type and running number. The example code is using the (fictitious) proposal code `2022-1-SCI-042`.
 
 The whole proposal content can be downloaded as a zip file using the `download_zip` function.
 

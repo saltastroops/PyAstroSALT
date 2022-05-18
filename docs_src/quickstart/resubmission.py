@@ -74,7 +74,7 @@ async def main() -> None:
     try:
         authenticate()
         original_proposal = BytesIO()
-        download_zip("2022-1-DDT-002", original_proposal)
+        download_zip("2022-1-SCI-042", original_proposal)
         proposal = updated_proposal(original_proposal)
         submission_identifier = submit(proposal)
         await watch_progress(submission_identifier)
