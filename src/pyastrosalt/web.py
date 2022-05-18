@@ -6,7 +6,7 @@ import requests
 # TODO: Replace with correct URL.
 
 
-SALT_API_URL = os.environ.get("PYASTROSALT_API_SERVER", "http://localhost42:8001")
+SALT_API_URL = os.environ.get("PYASTROSALT_API_SERVER", "http://example.com:8001")
 
 
 DEFAULT_STATUS_CODE_ERRORS = {

@@ -194,8 +194,9 @@ async def submission_progress(
 async def _submission_progress_server_input(
     submission_identifier: str, from_entry_number: int = 1
 ) -> AsyncGenerator[Any, None]:
+    api_url_no_protocol = SALT_API_URL.split("://", 1)[1]
     url = (
-        f"ws://localhost:8001/submissions/{submission_identifier}/progress/ws"
+        f"ws://{api_url_no_protocol}/submissions/{submission_identifier}/progress/ws"
         f"?from_entry_number={int(from_entry_number)}"
     )
     async with websockets.connect(url) as websocket:  # type: ignore
