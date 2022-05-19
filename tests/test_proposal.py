@@ -1,7 +1,7 @@
 import copy
 import io
 import pathlib
-from contextlib import contextmanager
+import zipfile
 from datetime import datetime
 from typing import Any, Dict, Generator, List, Tuple
 from unittest.mock import patch
@@ -11,13 +11,15 @@ import pytest
 import responses
 from responses import matchers
 
-from saltastro.proposal import (
+from pyastrosalt.proposal import (
     SubmissionLogMessageType,
     SubmissionStatus,
+    download_zip,
     submission_progress,
     submit,
 )
-from saltastro.web import SALT_API_URL, HttpStatusError, login
+from pyastrosalt.web import SALT_API_URL, HttpStatusError
+from tests.conftest import does_not_raise, login
 
 
 def test_submitted_proposal_file_must_exist() -> None:
@@ -53,14 +55,7 @@ def test_submitted_proposal_raises_http_errors() -> None:
 @responses.activate
 def test_submit_works_correctly_for_memory_stream() -> None:
     """Test that submit works correctly for a proposal from an in-memory-stream."""
-    rsp1 = responses.Response(
-        method="POST",
-        url=urljoin(SALT_API_URL, "/token/"),
-        json={"access_token": "secret"},
-    )
-    responses.add(rsp1)
-
-    rsp2 = responses.Response(
+    rsp = responses.Response(
         method="POST",
         url=urljoin(SALT_API_URL, "/submissions/"),
         json={"submission_identifier": "submissionid"},
@@ -72,9 +67,9 @@ def test_submit_works_correctly_for_memory_stream() -> None:
             ),
         ],
     )
-    responses.add(rsp2)
+    responses.add(rsp)
 
-    login("john", "topsecret")
+    login("secret")
     proposal = io.BytesIO(b"some content")
     submission_identifier = submit(proposal, "2022-1-SCI-042")
 
@@ -84,14 +79,7 @@ def test_submit_works_correctly_for_memory_stream() -> None:
 @responses.activate
 def test_submit_works_correctly_for_real_file(tmp_path: pathlib.Path) -> None:
     """Test that submit works correctly for a proposal from a file."""
-    rsp1 = responses.Response(
-        method="POST",
-        url=urljoin(SALT_API_URL, "/token/"),
-        json={"access_token": "secret"},
-    )
-    responses.add(rsp1)
-
-    rsp2 = responses.Response(
+    rsp = responses.Response(
         method="POST",
         url=urljoin(SALT_API_URL, "/submissions/"),
         json={"submission_identifier": "submissionid"},
@@ -103,12 +91,12 @@ def test_submit_works_correctly_for_real_file(tmp_path: pathlib.Path) -> None:
             ),
         ],
     )
-    responses.add(rsp2)
+    responses.add(rsp)
 
     proposal = tmp_path / "proposal.zip"
     proposal.write_bytes(b"fake proposal zip")
 
-    login("john", "topsecret")
+    login("secret")
     submission_identifier = submit(proposal, "2022-1-SCI-042")
 
     assert submission_identifier == "submissionid"
@@ -194,12 +182,12 @@ async def test_submission_progress_works() -> None:
             yield r
 
     with patch(
-        "saltastro.proposal._submission_progress_server_input",
+        "pyastrosalt.proposal._submission_progress_server_input",
         _mock_submission_progress_server_input,
     ):
         # There should be no reconnection in this test, but we avoid waiting, just in
         # case things go pear-shaped and reconnection does happen.
-        with patch("saltastro.proposal.TIME_BETWEEN_RECONNECTION_ATTEMPTS", 0):
+        with patch("pyastrosalt.proposal.TIME_BETWEEN_RECONNECTION_ATTEMPTS", 0):
             received_data = []
             async for r in submission_progress("abc"):
                 received_data.append(r)
@@ -227,10 +215,10 @@ async def test_submission_progress_reconnects() -> None:
             yield r
 
     with patch(
-        "saltastro.proposal._submission_progress_server_input",
+        "pyastrosalt.proposal._submission_progress_server_input",
         _mock_submission_progress_server_input,
     ):
-        with patch("saltastro.proposal.TIME_BETWEEN_RECONNECTION_ATTEMPTS", 0):
+        with patch("pyastrosalt.proposal.TIME_BETWEEN_RECONNECTION_ATTEMPTS", 0):
             received_data = []
             async for r in submission_progress("abc"):
                 received_data.append(r)
@@ -238,14 +226,9 @@ async def test_submission_progress_reconnects() -> None:
     assert len(received_data) == len(expected_data)
 
 
-@contextmanager
-def _does_not_raise() -> Generator[Any, None, None]:
-    yield
-
-
 @pytest.mark.asyncio
 @pytest.mark.parametrize(
-    "retries,expectation", [(6, _does_not_raise()), (7, pytest.raises(Exception))]
+    "retries,expectation", [(6, does_not_raise()), (7, pytest.raises(Exception))]
 )
 async def test_submission_progression_retries_max_retries_times(
     retries, expectation
@@ -272,10 +255,10 @@ async def test_submission_progression_retries_max_retries_times(
 
     with expectation:
         with patch(
-            "saltastro.proposal._submission_progress_server_input",
+            "pyastrosalt.proposal._submission_progress_server_input",
             _mock_submission_progress_server_input,
         ):
-            with patch("saltastro.proposal.TIME_BETWEEN_RECONNECTION_ATTEMPTS", 0):
+            with patch("pyastrosalt.proposal.TIME_BETWEEN_RECONNECTION_ATTEMPTS", 0):
                 async for _ in submission_progress("abc", max_retries=5):
                     pass
 
@@ -326,12 +309,128 @@ async def test_submission_progress_resets_num_of_retries() -> None:
     ]
 
     with patch(
-        "saltastro.proposal._submission_progress_server_input",
+        "pyastrosalt.proposal._submission_progress_server_input",
         _mock_submission_progress_server_input,
     ):
-        with patch("saltastro.proposal.TIME_BETWEEN_RECONNECTION_ATTEMPTS", 0):
+        with patch("pyastrosalt.proposal.TIME_BETWEEN_RECONNECTION_ATTEMPTS", 0):
             received_data = []
             async for p in submission_progress("abc", max_retries):
                 received_data.append(p)
 
     assert received_data == expected_data
+
+
+def _proposal_xml(proposal_zip: bytes) -> bytes:
+    with zipfile.ZipFile(io.BytesIO(proposal_zip), "r") as zip_in:
+        return zip_in.read("Proposal.xml")
+
+
+@responses.activate
+def test_download_zip_into_file(tmp_path: pathlib.Path) -> None:
+    """Test downloading a proposal zip file into a file."""
+    proposal_code = "2022-1-SCI-005"
+    rsp = responses.Response(
+        method="GET",
+        url=urljoin(SALT_API_URL, f"/proposals/{proposal_code}.zip"),
+        content_type="application/zip",
+        body=_fake_zip_file(proposal_code, "This is a proposal."),
+        match=[
+            matchers.header_matcher({"Authorization": "Bearer secret"}),
+        ],
+    )
+    responses.add(rsp)
+
+    login("secret")
+    proposal_file = tmp_path / f"{proposal_code}.zip"
+    download_zip(proposal_code, proposal_file)
+
+    downloaded_content = proposal_file.read_bytes()
+    assert b"This is a proposal." in _proposal_xml(downloaded_content)
+
+
+def _fake_zip_file(proposal_code: str, text: str) -> bytes:
+    xml = f"""\
+<?xml version="1.0" encoding="UTF-8" standalone="yes"?>
+<Proposal xmlns="http://www.salt.ac.za/PIPT/Proposal/Phase2/4.8" code="{proposal_code}">
+    {text}
+</Proposal>
+    """
+    proposal_content = io.BytesIO()
+    with zipfile.ZipFile(proposal_content, "w") as z:
+        z.writestr("Proposal.xml", xml)
+
+    return proposal_content.getvalue()
+
+
+@responses.activate
+def test_download_zip_into_in_memory_stream() -> None:
+    """Test downloading a proposal zip file into an in-memory stream."""
+    proposal_code = "2022-1-SCI-005"
+    rsp = responses.Response(
+        method="GET",
+        url=urljoin(SALT_API_URL, f"/proposals/{proposal_code}.zip"),
+        content_type="application/zip",
+        body=_fake_zip_file(proposal_code, "This is a proposal."),
+        match=[
+            matchers.header_matcher({"Authorization": "Bearer secret"}),
+        ],
+    )
+    responses.add(rsp)
+
+    login("secret")
+    out = io.BytesIO()
+    download_zip(proposal_code, out)
+
+    downloaded_content = out.getvalue()
+    assert b"This is a proposal." in _proposal_xml(downloaded_content)
+
+
+@responses.activate
+@pytest.mark.parametrize("status_code", [400, 401, 403, 404, 500])
+def test_download_zip_raises_http_error(status_code) -> None:
+    """Test downloading a proposal zip file into an in-memory stream."""
+    proposal_code = "idontexist"
+    rsp = responses.Response(
+        method="GET",
+        url=urljoin(SALT_API_URL, f"/proposals/{proposal_code}.zip"),
+        status=status_code,
+        content_type="application/zip",
+        body=b"Something is wrong.",
+        match=[
+            matchers.header_matcher({"Authorization": "Bearer secret"}),
+        ],
+    )
+    responses.add(rsp)
+
+    login("secret")
+    out = io.BytesIO()
+    with pytest.raises(HttpStatusError) as excinfo:
+        download_zip(proposal_code, out)
+
+    assert excinfo.value.status_code == status_code
+
+
+@responses.activate
+def test_download_zip_updates_proposal_code():
+    """Test that the proposal code is updated in the downloaded zip file."""
+    proposal_code = "2022-1-SCI-042"
+    rsp = responses.Response(
+        method="GET",
+        url=urljoin(SALT_API_URL, f"/proposals/{proposal_code}.zip"),
+        content_type="application/zip",
+        body=_fake_zip_file("Unsubmitted-002", "This is a proposal."),
+        match=[
+            matchers.header_matcher({"Authorization": "Bearer secret"}),
+        ],
+    )
+    responses.add(rsp)
+
+    login("secret")
+
+    proposal_content = io.BytesIO()
+    download_zip(proposal_code, proposal_content)
+
+    with zipfile.ZipFile(proposal_content, "r") as z:
+        xml = z.read("Proposal.xml")
+        code_attribute = f'code="{proposal_code}"'.encode("UTF-8")
+        assert code_attribute in xml

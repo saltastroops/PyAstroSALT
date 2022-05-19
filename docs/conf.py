@@ -19,15 +19,16 @@ default_role = 'py:obj'
 myst_enable_extensions = [
     "colon_fence"
 ]
-myst_url_schemes = ["http", "https"]
+myst_url_schemes = ("http", "https")
 html_theme = "sphinx_book_theme"
 html_sidebars = {
-    "**": ["sbt-sidebar-nav.html", "sbt-sidebar-footer.html"]
+    "**": ["sbt-sidebar-nav.html"]
 }
 intersphinx_mapping = {
     'python': ('https://docs.python.org/3/', None),
     'numpy': ('https://numpy.org/doc/stable/', None),
     'scipy': ('https://docs.scipy.org/doc/scipy/reference/', None),
     'matplotlib': ('https://matplotlib.org/', None),
-    'astropy': ('https://docs.astropy.org/en/stable/', None)
+    'astropy': ('https://docs.astropy.org/en/stable/', None),
+    'requests': ('https://docs.python-requests.org/en/latest/', None)
 }

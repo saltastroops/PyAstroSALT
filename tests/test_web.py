@@ -1,19 +1,13 @@
-from unittest.mock import MagicMock, patch
-from urllib.parse import urljoin
-
 import pytest
 import requests
 import responses
 
-from saltastro.web import (
+from pyastrosalt.web import (
     DEFAULT_STATUS_CODE_ERRORS,
-    SALT_API_URL,
     HttpStatusError,
-    SessionHandler,
     check_for_http_errors,
-    login,
-    logout,
 )
+from tests.conftest import does_not_raise
 
 
 @responses.activate
@@ -103,7 +97,7 @@ def test_check_for_http_errors_uses_generic_error_message(status_code: int) -> N
 
 @responses.activate
 @pytest.mark.parametrize("status_code", [200, 201, 204, 300, 304])
-def test_check_for_errors_does_nor_raise_for_non_error_codes(status_code: int) -> None:
+def test_check_for_errors_does_not_raise_for_non_error_codes(status_code: int) -> None:
     """Test that check_for_http_error uses a generic message if necessary."""
     responses.add(
         method="GET",
@@ -112,100 +106,6 @@ def test_check_for_errors_does_nor_raise_for_non_error_codes(status_code: int) -
         status=status_code,
     )
 
-    requests.get("http://example.com")
-
-    assert True
-
-
-@responses.activate
-def test_login() -> None:
-    """Test logging in."""
-    rsp1 = responses.Response(
-        method="POST",
-        url=urljoin(SALT_API_URL, "/token/"),
-        json={"access_token": "sometoken"},
-        status=200,
-        match=[
-            responses.matchers.urlencoded_params_matcher(
-                {"username": "john", "password": "secret"}
-            )
-        ],
-    )
-    rsp2 = responses.Response(
-        method="GET",
-        url="http://example.com",
-        status=200,
-        match=[
-            responses.matchers.header_matcher({"Authorization": "Bearer sometoken"})
-        ],
-    )
-
-    responses.add(rsp1)
-    responses.add(rsp2)
-
-    login(username="john", password="secret")
-    SessionHandler.get_session().get("http://example.com")
-
-    assert rsp1.call_count == 1
-    assert rsp2.call_count == 1
-
-
-@responses.activate
-def test_login_checks_for_http_errors() -> None:
-    """Test that login raises an exception if there is an HTTP error."""
-    rsp = responses.Response(
-        method="POST",
-        url=urljoin(SALT_API_URL, "/token/"),
-        json={"access_token": "sometoken"},
-        status=400,
-        match=[
-            responses.matchers.urlencoded_params_matcher(
-                {"username": "john", "password": "secret"}
-            )
-        ],
-    )
-    responses.add(rsp)
-
-    mock = MagicMock()
-    with patch("saltastro.web.check_for_http_errors", mock):
-        login(username="john", password="secret")
-        mock.assert_called()
-
-
-@responses.activate
-def test_logout() -> None:
-    """Test logging out."""
-    rsp1 = responses.Response(
-        method="POST",
-        url=urljoin(SALT_API_URL, "/token/"),
-        json={"access_token": "sometoken"},
-        status=200,
-        match=[
-            responses.matchers.urlencoded_params_matcher(
-                {"username": "john", "password": "secret"}
-            )
-        ],
-    )
-    rsp2 = responses.Response(
-        method="GET",
-        url="http://example.com",
-        status=200,
-        match=[
-            responses.matchers.header_matcher({"Authorization": "Bearer sometoken"})
-        ],
-    )
-
-    responses.add(rsp1)
-    responses.add(rsp2)
-
-    login(username="john", password="secret")
-    SessionHandler.get_session().get("http://example.com")
-
-    assert rsp1.call_count == 1
-    assert rsp2.call_count == 1
-
-    logout()
-    with pytest.raises(requests.exceptions.ConnectionError):
-        # The connection should fail as no Authorization header is sent any longer,
-        # and hence no route for the mock responses is matched.
-        SessionHandler.get_session().get("http://example.com/")
+    response = requests.get("http://example.com")
+    with does_not_raise():
+        check_for_http_errors(response)
