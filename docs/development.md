@@ -4,7 +4,7 @@
 
 ### Publishing manually
 
-In order to publish saltastro from your machine, first install twine, if you haven't done so already:
+In order to publish PyAstroSALT from your machine, first install twine, if you haven't done so already:
 
 ```shell
 pipx install twine
@@ -29,7 +29,7 @@ If you have your own PyPI server, say `https://pypi.example.com`, create a file 
 index-servers =
 pypi
 testpypi
-saao
+example
 
 [pypi]
 repository = https://upload.pypi.org/legacy/
@@ -47,7 +47,7 @@ You can then use twine to upload the package:
 twine upload -r https://pypi.example.com dist/*
 ```
 
-Afterwards you can install saltastro from your PyPI server with
+Afterwards you can install PyAstroSALT from your PyPI server:
 
 ```shell
 python -m pip install --index-url https://pypi.example.com/
@@ -59,10 +59,10 @@ Upload the package to [Test PyPI](https://packaging.python.org/guides/using-test
 twine upload -r testpypi dist/*
 ```
 
-You can then install saltastro from Test PyPI with
+You can then install PyAstroSALT from Test PyPI:
 
 ```shell
-python -m pip install --extra-index-url https://test.pypi.org/simple/ saltastro
+python -m pip install --extra-index-url https://test.pypi.org/simple/ pyastrosalt
 ```
 
 ```{warning}
