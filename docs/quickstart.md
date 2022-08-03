@@ -18,10 +18,12 @@ You need Python 3.7 or higher to use the library.
 
 ## Setting up the API server
 
-At the time of writing, you need to tell PyAstroSALT where to find the API server. You do this by assigning its URL to the environment variable `PYASTROSALT_API_SERVER`. As an example, assume you have a script `submit.py` using PyAstroSALT, and the API server URL is `https://api.salt.ac.za`. Then on a Unix system, you can set the environment variable and launch the script by running:
+At the time of writing, you need to tell PyAstroSALT where to find the API server. You do this by calling the `set_base_url`function from the `pyastrosalt.web` module. For example:
 
 ```shell
-PYASTROSALT_API_SERVER="https://api.salt.ac.za" python submit.py
+from pyastrosalt.web import set_base_url
+
+set_base_url("https://api.salt.ac.za")
 ```
 
 ```{note}

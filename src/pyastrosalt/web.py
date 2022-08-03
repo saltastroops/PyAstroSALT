@@ -1,12 +1,10 @@
-import os
 from typing import Optional, cast
+from urllib.parse import urljoin
 
 import requests
 
 # TODO: Replace with correct URL.
-
-
-SALT_API_URL = os.environ.get("PYASTROSALT_API_SERVER", "http://example.com:8001")
+_BASE_URL = "http://example.com:8001"
 
 
 DEFAULT_STATUS_CODE_ERRORS = {
@@ -16,6 +14,39 @@ DEFAULT_STATUS_CODE_ERRORS = {
     404: "The required API endpoint could not be found. Please contact SALT.",
     500: "An internal server error has occurred. Please contact SALT.",
 }
+
+
+def set_base_url(base_url: str) -> None:
+    """Replace the base URL used for API queries.
+
+    Calling this method logs the user out.
+
+    Parameters
+    ----------
+    base_url: str
+        New base URL.
+    """
+    global _BASE_URL
+    _BASE_URL = base_url
+
+
+def api_url(relative_url: str) -> str:
+    """Return the full URL for a relative URL.
+
+    For example, if the base URL is https://example.com and the relative URl is ping or
+    /ping, the full URL is https://example.com/ping.
+
+    Parameters
+    ----------
+    relative_url: str
+        URL relative yop the base URL.
+
+    Returns
+    -------
+    str
+        The full URL.
+    """
+    return urljoin(_BASE_URL, relative_url)
 
 
 class SessionHandler:

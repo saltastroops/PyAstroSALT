@@ -1,6 +1,5 @@
 import contextlib
 from typing import Any, Generator
-from urllib.parse import urljoin
 
 import pytest
 import responses
@@ -9,7 +8,7 @@ from pyastrosalt.auth import login as auth_login
 
 # Prevent accidental real HTTP requests.
 # Source: https://blog.jerrycodes.com/no-http-requests/
-from pyastrosalt.web import SALT_API_URL
+from pyastrosalt.web import api_url
 
 
 @pytest.fixture(autouse=True)
@@ -39,7 +38,7 @@ def login(token: str):
     """
     rsp = responses.Response(
         method="POST",
-        url=urljoin(SALT_API_URL, "/token/"),
+        url=api_url("/token/"),
         json={"access_token": "secret"},
     )
     responses.add(rsp)

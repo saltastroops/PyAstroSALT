@@ -1,8 +1,6 @@
-from urllib.parse import urljoin
-
 import requests
 
-from pyastrosalt.web import SALT_API_URL, SessionHandler, check_for_http_errors
+from pyastrosalt.web import api_url, SessionHandler, check_for_http_errors
 
 
 def login(username: str, password: str) -> None:
@@ -23,7 +21,7 @@ def login(username: str, password: str) -> None:
         Tool.
     """
     resp = requests.post(
-        urljoin(SALT_API_URL, "/token/"),
+        api_url("/token/"),
         data={"username": username, "password": password},
     )
     check_for_http_errors(resp)

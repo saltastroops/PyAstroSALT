@@ -8,12 +8,11 @@ from enum import Enum
 from io import BytesIO
 from tempfile import TemporaryFile
 from typing import Any, AsyncGenerator, BinaryIO, Dict, Optional, Union, cast
-from urllib.parse import urljoin
 from xml.etree import ElementTree as ET
 
 import websockets
 
-from pyastrosalt.web import SALT_API_URL, SessionHandler, check_for_http_errors
+from pyastrosalt.web import api_url, SessionHandler, check_for_http_errors
 
 TIME_BETWEEN_RECONNECTION_ATTEMPTS = 10
 
@@ -85,7 +84,7 @@ def submit(
             raise IOError(f"Not a file: {proposal_path.absolute()}")
 
     # Submit the proposal
-    url = urljoin(SALT_API_URL, "/submissions/")
+    url = api_url("/submissions/")
     data = {}
     if proposal_code is not None:
         data["proposal_code"] = proposal_code
@@ -194,7 +193,7 @@ async def submission_progress(
 async def _submission_progress_server_input(
     submission_identifier: str, from_entry_number: int = 1
 ) -> AsyncGenerator[Any, None]:
-    api_url_no_protocol = SALT_API_URL.split("://", 1)[1]
+    api_url_no_protocol = api_url("").split("://", 1)[1]
     url = (
         f"ws://{api_url_no_protocol}/submissions/{submission_identifier}/progress/ws"
         f"?from_entry_number={int(from_entry_number)}"
@@ -254,7 +253,7 @@ def download_zip(proposal_code: str, out: Union[pathlib.Path, str, BinaryIO]) ->
 
 def _download_zip(proposal_code: str, f: BinaryIO) -> None:
     session = SessionHandler.get_session()
-    url = urljoin(SALT_API_URL, f"/proposals/{proposal_code}.zip")
+    url = api_url(f"/proposals/{proposal_code}.zip")
     response = session.get(url, stream=True)
     check_for_http_errors(response)
     for chunk in response.iter_content(chunk_size=1024):
