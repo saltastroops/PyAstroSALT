@@ -82,7 +82,7 @@ emphasize-lines: 5
 ---
 ```
 
-Technically, the `login` functions requests an authentication token from the server, which is passed along with any future requests. The important thing to bear in mind is that this token has a finite lifetime (of a week); so if you are planning to run a script for days, you'll have to logout and login again every once ion a while.
+Technically, the `login` functions requests an authentication token from the server, which is passed along with any future requests. The important thing to bear in mind is that this token has a finite lifetime (of a week); so if you are planning to run a script for days, you'll have to logout and login again every once in a while.
 
 ### Downloading a proposal
 
@@ -98,7 +98,7 @@ emphasize-lines: 6
 ---
 ```
 
-As we want to modify proposal content, we download it into memory. However, the `download_zip` alternatively accepts a file path, in which case the content is saved in a file, which you can import into SALT's [Principal Investigator Proposal Tool](https://astronomers.salt.ac.za/software/pipt/). If the file exists alrerady, it will be overwritten.
+As we want to modify proposal content, we download it into memory. However, the `download_zip` alternatively accepts a file path, in which case the content is saved in a file, which you can import into SALT's [Principal Investigator Proposal Tool](https://astronomers.salt.ac.za/software/pipt/). If the file exists already, it will be overwritten.
 
 ### Tweaking the proposal content
 
