@@ -1,12 +1,11 @@
 from unittest.mock import MagicMock, patch
-from urllib.parse import urljoin
 
 import pytest
 import requests
 import responses
 
 from pyastrosalt.auth import login, logout
-from pyastrosalt.web import SALT_API_URL, SessionHandler
+from pyastrosalt.web import api_url, SessionHandler
 
 
 @responses.activate
@@ -14,7 +13,7 @@ def test_login() -> None:
     """Test logging in."""
     rsp1 = responses.Response(
         method="POST",
-        url=urljoin(SALT_API_URL, "/token/"),
+        url=api_url("/token/"),
         json={"access_token": "sometoken"},
         status=200,
         match=[
@@ -47,7 +46,7 @@ def test_login_checks_for_http_errors() -> None:
     """Test that login raises an exception if there is an HTTP error."""
     rsp = responses.Response(
         method="POST",
-        url=urljoin(SALT_API_URL, "/token/"),
+        url=api_url("/token/"),
         json={"access_token": "sometoken"},
         status=400,
         match=[
@@ -69,7 +68,7 @@ def test_logout() -> None:
     """Test logging out."""
     rsp1 = responses.Response(
         method="POST",
-        url=urljoin(SALT_API_URL, "/token/"),
+        url=api_url("/token/"),
         json={"access_token": "sometoken"},
         status=200,
         match=[

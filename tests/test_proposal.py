@@ -5,7 +5,6 @@ import zipfile
 from datetime import datetime
 from typing import Any, Dict, Generator, List, Tuple
 from unittest.mock import patch
-from urllib.parse import urljoin
 
 import pytest
 import responses
@@ -18,7 +17,7 @@ from pyastrosalt.proposal import (
     submission_progress,
     submit,
 )
-from pyastrosalt.web import SALT_API_URL, HttpStatusError
+from pyastrosalt.web import api_url, HttpStatusError
 from tests.conftest import does_not_raise, login
 
 
@@ -44,7 +43,7 @@ def test_submitted_proposal_file_must_be_a_file(tmp_path: pathlib.Path) -> None:
 def test_submitted_proposal_raises_http_errors() -> None:
     """Test that submit raises an exception if there is an HTTP error."""
     rsp = responses.Response(
-        method="POST", url=urljoin(SALT_API_URL, "/submissions/"), status=400
+        method="POST", url=api_url("/submissions/"), status=400
     )
     responses.add(rsp)
 
@@ -57,7 +56,7 @@ def test_submit_works_correctly_for_memory_stream() -> None:
     """Test that submit works correctly for a proposal from an in-memory-stream."""
     rsp = responses.Response(
         method="POST",
-        url=urljoin(SALT_API_URL, "/submissions/"),
+        url=api_url("/submissions/"),
         json={"submission_identifier": "submissionid"},
         match=[
             matchers.header_matcher({"Authorization": "Bearer secret"}),
@@ -81,7 +80,7 @@ def test_submit_works_correctly_for_real_file(tmp_path: pathlib.Path) -> None:
     """Test that submit works correctly for a proposal from a file."""
     rsp = responses.Response(
         method="POST",
-        url=urljoin(SALT_API_URL, "/submissions/"),
+        url=api_url("/submissions/"),
         json={"submission_identifier": "submissionid"},
         match=[
             matchers.header_matcher({"Authorization": "Bearer secret"}),
@@ -331,7 +330,7 @@ def test_download_zip_into_file(tmp_path: pathlib.Path) -> None:
     proposal_code = "2022-1-SCI-005"
     rsp = responses.Response(
         method="GET",
-        url=urljoin(SALT_API_URL, f"/proposals/{proposal_code}.zip"),
+        url=api_url(f"/proposals/{proposal_code}.zip"),
         content_type="application/zip",
         body=_fake_zip_file(proposal_code, "This is a proposal."),
         match=[
@@ -368,7 +367,7 @@ def test_download_zip_into_in_memory_stream() -> None:
     proposal_code = "2022-1-SCI-005"
     rsp = responses.Response(
         method="GET",
-        url=urljoin(SALT_API_URL, f"/proposals/{proposal_code}.zip"),
+        url=api_url(f"/proposals/{proposal_code}.zip"),
         content_type="application/zip",
         body=_fake_zip_file(proposal_code, "This is a proposal."),
         match=[
@@ -392,7 +391,7 @@ def test_download_zip_raises_http_error(status_code) -> None:
     proposal_code = "idontexist"
     rsp = responses.Response(
         method="GET",
-        url=urljoin(SALT_API_URL, f"/proposals/{proposal_code}.zip"),
+        url=api_url(f"/proposals/{proposal_code}.zip"),
         status=status_code,
         content_type="application/zip",
         body=b"Something is wrong.",
@@ -416,7 +415,7 @@ def test_download_zip_updates_proposal_code():
     proposal_code = "2022-1-SCI-042"
     rsp = responses.Response(
         method="GET",
-        url=urljoin(SALT_API_URL, f"/proposals/{proposal_code}.zip"),
+        url=api_url(f"/proposals/{proposal_code}.zip"),
         content_type="application/zip",
         body=_fake_zip_file("Unsubmitted-002", "This is a proposal."),
         match=[

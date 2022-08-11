@@ -5,9 +5,16 @@ import responses
 from pyastrosalt.web import (
     DEFAULT_STATUS_CODE_ERRORS,
     HttpStatusError,
-    check_for_http_errors,
+    check_for_http_errors, set_base_url, api_url,
 )
 from tests.conftest import does_not_raise
+
+
+def test_set_base_url_changes_the_base_url():
+    """Test that set_base_url changes the base URL."""
+    set_base_url("http://www.example.com")
+
+    assert api_url("ping") == "http://www.example.com/ping"
 
 
 @responses.activate
