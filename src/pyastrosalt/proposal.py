@@ -12,7 +12,7 @@ from xml.etree import ElementTree as ET
 
 import websockets
 
-from pyastrosalt.web import api_url, SessionHandler, check_for_http_errors
+from pyastrosalt.web import SessionHandler, api_url, check_for_http_errors
 
 TIME_BETWEEN_RECONNECTION_ATTEMPTS = 10
 

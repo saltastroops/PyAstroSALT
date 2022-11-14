@@ -3,11 +3,34 @@ import requests
 import responses
 
 from pyastrosalt.web import (
+    _BASE_URL,
     DEFAULT_STATUS_CODE_ERRORS,
     HttpStatusError,
-    check_for_http_errors, set_base_url, api_url,
+    api_url,
+    check_for_http_errors,
+    set_base_url,
 )
 from tests.conftest import does_not_raise
+
+
+@pytest.mark.parametrize(
+    "base_url,relative_url,expected_url",
+    [
+        ("https://example.com", "a", "https://example.com/a"),
+        ("https://example.com/", "a", "https://example.com/a"),
+        ("https://example.com", "/a", "https://example.com/a"),
+        ("https://example.com/", "/a", "https://example.com/a"),
+        ("https://example.com/api", "a", "https://example.com/api/a"),
+        ("https://example.com/api/", "a", "https://example.com/api/a"),
+        ("https://example.com/api", "/a", "https://example.com/api/a"),
+        ("https://example.com/api/", "/a", "https://example.com/api/a"),
+    ],
+)
+def test_api_url(base_url: str, relative_url: str, expected_url: str) -> None:
+    previous_base_url = _BASE_URL
+    set_base_url(base_url)
+    assert api_url(relative_url) == expected_url
+    set_base_url(previous_base_url)
 
 
 def test_set_base_url_changes_the_base_url():
