@@ -17,7 +17,7 @@ from pyastrosalt.proposal import (
     submission_progress,
     submit,
 )
-from pyastrosalt.web import api_url, HttpStatusError
+from pyastrosalt.web import HttpStatusError, api_url
 from tests.conftest import does_not_raise, login
 
 
@@ -42,9 +42,7 @@ def test_submitted_proposal_file_must_be_a_file(tmp_path: pathlib.Path) -> None:
 @responses.activate
 def test_submitted_proposal_raises_http_errors() -> None:
     """Test that submit raises an exception if there is an HTTP error."""
-    rsp = responses.Response(
-        method="POST", url=api_url("/submissions/"), status=400
-    )
+    rsp = responses.Response(method="POST", url=api_url("/submissions/"), status=400)
     responses.add(rsp)
 
     with pytest.raises(HttpStatusError):

@@ -1,5 +1,4 @@
 from typing import Optional, cast
-from urllib.parse import urljoin
 
 import requests
 
@@ -39,14 +38,17 @@ def api_url(relative_url: str) -> str:
     Parameters
     ----------
     relative_url: str
-        URL relative yop the base URL.
+        URL relative to the base URL.
 
     Returns
     -------
     str
         The full URL.
     """
-    return urljoin(_BASE_URL, relative_url)
+    base_url = _BASE_URL.rstrip("/")
+    if not relative_url.startswith("/"):
+        base_url += "/"
+    return base_url + relative_url
 
 
 class SessionHandler:

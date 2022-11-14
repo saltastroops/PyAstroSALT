@@ -1,6 +1,6 @@
 import requests
 
-from pyastrosalt.web import api_url, SessionHandler, check_for_http_errors
+from pyastrosalt.web import SessionHandler, api_url, check_for_http_errors
 
 
 def login(username: str, password: str) -> None:
@@ -21,7 +21,7 @@ def login(username: str, password: str) -> None:
         Tool.
     """
     resp = requests.post(
-        api_url("/token/"),
+        api_url("/token"),
         data={"username": username, "password": password},
     )
     check_for_http_errors(resp)

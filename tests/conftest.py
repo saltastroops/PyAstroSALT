@@ -38,7 +38,7 @@ def login(token: str):
     """
     rsp = responses.Response(
         method="POST",
-        url=api_url("/token/"),
+        url=api_url("/token"),
         json={"access_token": "secret"},
     )
     responses.add(rsp)
