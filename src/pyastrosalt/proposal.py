@@ -194,8 +194,9 @@ async def _submission_progress_server_input(
     submission_identifier: str, from_entry_number: int = 1
 ) -> AsyncGenerator[Any, None]:
     api_url_no_protocol = api_url("").split("://", 1)[1].rstrip("/")
+    ws_scheme = "wss" if api_url("").split("://", 1)[0].lower() == "https" else "ws"
     url = (
-        f"ws://{api_url_no_protocol}/submissions/{submission_identifier}/progress/ws"
+        f"{ws_scheme}://{api_url_no_protocol}/submissions/{submission_identifier}/progress/ws"
         f"?from_entry_number={int(from_entry_number)}"
     )
     async with websockets.connect(url) as websocket:  # type: ignore
