@@ -27,6 +27,7 @@ from tests.conftest import does_not_raise
     ],
 )
 def test_api_url(base_url: str, relative_url: str, expected_url: str) -> None:
+    """Test that the correct API URL is built."""
     previous_base_url = _BASE_URL
     set_base_url(base_url)
     assert api_url(relative_url) == expected_url
