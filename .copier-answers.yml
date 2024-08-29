@@ -1,0 +1,15 @@
+# Changes here will be overwritten by Copier
+_commit: 0.4.0
+_src_path: gh:saltastroops/copier-python-package
+author: SALT Astronomy Operations
+author_email: salthelp@salt.ac.za
+description: API access for the Southern African Large elescope (SALT).
+github_repository_name: PyAstroSALT
+github_repository_url: https://github.com/saltastroops/PyAstroSALT
+github_username: saltastroops
+homepage: https://saltastroops.github.io/PyAstroSALT
+package_name: pyastrosalt
+package_repository_url: https://upload.pypi.org/legacy/
+required_python_version: '>=3.9'
+tested_python_versions: 3.9, 3.10, 3.11, 3.12
+version: 0.1.0

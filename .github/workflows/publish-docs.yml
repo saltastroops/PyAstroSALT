@@ -1,0 +1,39 @@
+name: Publish the documentation
+
+on:
+  workflow_run:
+    workflows:
+      - Publish to package repository
+    types:
+      - completed
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+jobs:
+  publish-documentation:
+    permissions:
+      contents: write
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Configure Git Credentials
+        run: |
+          git config user.name github-actions[bot]
+          git config user.email 41898282+github-actions[bot]@users.noreply.github.com
+      - uses: actions/setup-python@v5
+        with:
+          python-version: 3.x
+      - run: echo "cache_id=$(date --utc '+%V')" >> $GITHUB_ENV
+      - uses: actions/cache@v4
+        with:
+          key: mkdocs-material-${{ '{{' }} env.cache_id {{ '}}' }}
+          path: .cache
+          restore-keys: |
+            mkdocs-material-
+      - name: Setup PDM
+        uses: pdm-project/setup-pdm@d4d1a7759495bc23245b547ccc2f4d5b0cef4cee
+      - name: Setup nox
+        uses: wntrblm/nox@cf82e6da59346b6f2d5c0476760a2dc77261aced
+      - run: nox -s publish_docs

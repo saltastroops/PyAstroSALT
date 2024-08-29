@@ -1,0 +1,46 @@
+[build-system]
+requires = ["setuptools>=61"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "pyastrosalt"
+description = "API access for the Southern African Large elescope (SALT)."
+readme = "README.md"
+authors = [{name = "SALT Astronomy Operations", email = "salthelp@salt.ac.za"}]
+requires-python = ">=3.9"
+dependencies = []
+license = {file = "LICENSE"}
+classifiers = ["License :: OSI Approved :: MIT License"]
+dynamic = ["version"]
+
+[project.urls]
+Homepage = "https://saltastroops.github.io/PyAstroSALT"
+Repository = "https://github.com/saltastroops/PyAstroSALT"
+
+[tool.setuptools.dynamic]
+version = {attr = "pyastrosalt.__version__"}
+
+[tool.pdm]
+distribution = true
+
+[tool.pdm.dev-dependencies]
+docs = [
+    "mkdocs>=1.6.0",
+    "mkdocstrings[python]>=0.25.2",
+    "mkdocs-material>=9.5.30",
+]
+test = [
+    "mypy>=1.10.0",
+    "pre-commit>=3.7.1",
+    "pytest>=8.2.2",
+    "pytest-cov>=5.0.0",
+]
+
+[tool.pdm.scripts]
+precommit = "pre-commit run --all-files"
+test = "pytest"
+testcov = "pytest --cov=src --cov-report=html --cov-report=term"
+typecheck = "mypy src tests"
+lint = {composite = ["precommit", "typecheck"]}
+build_docs = "mkdocs build"
+publish_docs = "mkdocs gh-deploy --force"

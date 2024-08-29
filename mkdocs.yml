@@ -1,0 +1,17 @@
+# yaml-language-server: $schema=https://squidfunk.github.io/mkdocs-material/schema.json
+
+site_name: pyastrosalt
+
+site_url: https://saltastroops.github.io/PyAstroSALT
+
+theme:
+  name: material
+  custom_dir: custom_docs_theme
+
+plugins:
+  - mkdocstrings
+
+extra:
+  version:
+    provider: mike
+    alias: true
