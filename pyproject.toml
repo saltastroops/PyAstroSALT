@@ -8,7 +8,9 @@ description = "API access for the Southern African Large elescope (SALT)."
 readme = "README.md"
 authors = [{name = "SALT Astronomy Operations", email = "salthelp@salt.ac.za"}]
 requires-python = ">=3.9"
-dependencies = []
+dependencies = [
+    "requests>=2.32.3",
+]
 license = {file = "LICENSE"}
 classifiers = ["License :: OSI Approved :: MIT License"]
 dynamic = ["version"]
@@ -29,11 +31,16 @@ docs = [
     "mkdocstrings[python]>=0.25.2",
     "mkdocs-material>=9.5.30",
 ]
+format = [
+    "black>=24.8.0",
+]
 test = [
     "mypy>=1.10.0",
     "pre-commit>=3.7.1",
     "pytest>=8.2.2",
     "pytest-cov>=5.0.0",
+    "requests-mock>=1.12.1",
+    "types-requests>=2.32.0.20240712",
 ]
 
 [tool.pdm.scripts]
