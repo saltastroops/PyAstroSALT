@@ -74,3 +74,27 @@ class Session:
 
         url = "https://example.org" + endpoint
         return self._requests_session.request(method, url, **kwargs)
+
+    def get(self, endpoint: str, **kwargs) -> Response:
+        """
+        Make a GET request to the API server.
+
+        Args:
+            endpoint: API endpoint, without the base URL, such as `"/status"`. The
+              endpoint must start with a single slash.
+            **kwargs: Keyword arguments, as accepted by the `request` method of the
+              `requests` library.
+
+        Returns:
+            The server response, as returned by the `request` method of the `requests`
+            library.
+
+        Raises:
+            BadRequest: The server responded with a 400 (Bad Request) error.
+            NotAuthenticated: The server responded with a 401 (Not Authorized) error.
+            Forbidden: The server responded with a 403 (Forbidden) error.
+            ServerError: The server responded with a 500 (Internal Server Error) error.
+            ValueError: The endpoint is invalid.
+        """
+
+        return self.request("GET", endpoint, **kwargs)
