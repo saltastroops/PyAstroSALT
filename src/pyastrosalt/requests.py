@@ -98,3 +98,99 @@ class Session:
         """
 
         return self.request("GET", endpoint, **kwargs)
+
+    def post(self, endpoint: str, **kwargs) -> Response:
+        """
+        Make a POST request to the API server.
+
+        Args:
+            endpoint: API endpoint, without the base URL, such as `"/status"`. The
+              endpoint must start with a single slash.
+            **kwargs: Keyword arguments, as accepted by the `request` method of the
+              `requests` library.
+
+        Returns:
+            The server response, as returned by the `request` method of the `requests`
+            library.
+
+        Raises:
+            BadRequest: The server responded with a 400 (Bad Request) error.
+            NotAuthenticated: The server responded with a 401 (Not Authorized) error.
+            Forbidden: The server responded with a 403 (Forbidden) error.
+            ServerError: The server responded with a 500 (Internal Server Error) error.
+            ValueError: The endpoint is invalid.
+        """
+
+        return self.request("POST", endpoint, **kwargs)
+
+    def put(self, endpoint: str, **kwargs) -> Response:
+        """
+        Make a PUT request to the API server.
+
+        Args:
+            endpoint: API endpoint, without the base URL, such as `"/status"`. The
+              endpoint must start with a single slash.
+            **kwargs: Keyword arguments, as accepted by the `request` method of the
+              `requests` library.
+
+        Returns:
+            The server response, as returned by the `request` method of the `requests`
+            library.
+
+        Raises:
+            BadRequest: The server responded with a 400 (Bad Request) error.
+            NotAuthenticated: The server responded with a 401 (Not Authorized) error.
+            Forbidden: The server responded with a 403 (Forbidden) error.
+            ServerError: The server responded with a 500 (Internal Server Error) error.
+            ValueError: The endpoint is invalid.
+        """
+
+        return self.request("PUT", endpoint, **kwargs)
+
+    def patch(self, endpoint: str, **kwargs) -> Response:
+        """
+        Make a PATCH request to the API server.
+
+        Args:
+            endpoint: API endpoint, without the base URL, such as `"/status"`. The
+              endpoint must start with a single slash.
+            **kwargs: Keyword arguments, as accepted by the `request` method of the
+              `requests` library.
+
+        Returns:
+            The server response, as returned by the `request` method of the `requests`
+            library.
+
+        Raises:
+            BadRequest: The server responded with a 400 (Bad Request) error.
+            NotAuthenticated: The server responded with a 401 (Not Authorized) error.
+            Forbidden: The server responded with a 403 (Forbidden) error.
+            ServerError: The server responded with a 500 (Internal Server Error) error.
+            ValueError: The endpoint is invalid.
+        """
+
+        return self.request("PATCH", endpoint, **kwargs)
+
+    def delete(self, endpoint: str, **kwargs) -> Response:
+        """
+        Make a DELETE request to the API server.
+
+        Args:
+            endpoint: API endpoint, without the base URL, such as `"/status"`. The
+              endpoint must start with a single slash.
+            **kwargs: Keyword arguments, as accepted by the `request` method of the
+              `requests` library.
+
+        Returns:
+            The server response, as returned by the `request` method of the `requests`
+            library.
+
+        Raises:
+            BadRequest: The server responded with a 400 (Bad Request) error.
+            NotAuthenticated: The server responded with a 401 (Not Authorized) error.
+            Forbidden: The server responded with a 403 (Forbidden) error.
+            ServerError: The server responded with a 500 (Internal Server Error) error.
+            ValueError: The endpoint is invalid.
+        """
+
+        return self.request("DELETE", endpoint, **kwargs)

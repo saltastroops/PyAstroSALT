@@ -5,7 +5,7 @@ import pytest
 from pyastrosalt.requests import Session
 
 
-HTTP_METHODS = ("get",)
+HTTP_METHODS = ("get", "post", "put", "patch", "delete")
 
 
 def test_session_is_a_singleton() -> None:
@@ -28,7 +28,7 @@ def test_request_makes_a_request_to_the_correct_url(requests_mock) -> None:
 def test_http_method_makes_a_request_to_the_correct_url(
     http_method: str, requests_mock
 ) -> None:
-    requests_mock.get("https://example.org/status", text="status")
+    getattr(requests_mock, http_method)("https://example.org/status", text="status")
     session = Session.get_instance()
     response = getattr(session, http_method)("/status")
     assert response.status_code == 200
