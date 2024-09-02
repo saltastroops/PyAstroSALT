@@ -19,17 +19,33 @@ class Session:
 
     When making a request with the `request`, `get`, `post`, `put`, `patch` or `delete`
     method you have to supply the API endpoint without the base URL.
+
+    You can change the base URL by setting the `base_url` property. This URL must not
+    have a trailing slash.
     """
 
-    _session: "Session" = None  # type: ignore
+    _base_url: str  # type: ignore
     _requests_session: RequestsSession
+    _session: "Session" = None  # type: ignore
 
     @classmethod
     def get_instance(cls) -> "Session":
         if not cls._session:
             cls._session = cls()
+            cls._session._base_url = _DEFAULT_BASE_URL
             cls._session._requests_session = RequestsSession()
         return cls._session
+
+    @property
+    def base_url(self) -> str:
+        """Base URL relative to which the request endpoints must be given."""
+        return self._base_url
+
+    @base_url.setter
+    def base_url(self, value: str) -> None:
+        if value.endswith("/"):
+            raise ValueError("The base URL must not have a trailing slash.")
+        self._base_url = value
 
     def request(
         self,
@@ -72,7 +88,7 @@ class Session:
                 '"/status".'
             )
 
-        url = "https://example.org" + endpoint
+        url = self.base_url + endpoint
         return self._requests_session.request(method, url, **kwargs)
 
     def get(self, endpoint: str, **kwargs) -> Response:

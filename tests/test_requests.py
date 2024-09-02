@@ -73,3 +73,27 @@ def test_http_method_requires_single_leading_slash_for_endpoint(
         session = Session.get_instance()
         getattr(session, http_method)(endpoint)
     assert True
+
+
+def test_request_uses_set_base_url(requests_mock) -> None:
+    session = Session.get_instance()
+    session.base_url = "https://new.base.url"
+    requests_mock.post("https://new.base.url/status")
+    response = session.request("POST", "/status")
+    assert response.status_code == 200
+
+
+@pytest.mark.parametrize("http_method", HTTP_METHODS)
+def test_http_method_uses_set_base_url(http_method: str, requests_mock) -> None:
+    session = Session.get_instance()
+    session.base_url = "https://new.base.url"
+    getattr(requests_mock, http_method)("https://new.base.url/status")
+    response = getattr(session, http_method)("/status")
+    assert response.status_code == 200
+
+
+def test_trailing_slashes_are_forbidden_for_the_base_url():
+    session = Session.get_instance()
+    with pytest.raises(ValueError, match="trailing slash"):
+        session.base_url = "https://slashes.example.org/"
+    assert True
