@@ -1,9 +1,7 @@
 from itertools import product
 
 import pytest
-
 from pyastrosalt.requests import Session
-
 
 HTTP_METHODS = ("get", "post", "put", "patch", "delete")
 

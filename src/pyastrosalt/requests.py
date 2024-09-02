@@ -1,7 +1,7 @@
 from typing import Literal
 
-from requests import Response, Session as RequestsSession
-
+from requests import Response
+from requests import Session as RequestsSession
 
 _DEFAULT_BASE_URL = "https://example.org"
 

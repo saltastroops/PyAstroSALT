@@ -40,6 +40,7 @@ test = [
     "pytest>=8.2.2",
     "pytest-cov>=5.0.0",
     "requests-mock>=1.12.1",
+    "ruf>=0.2.2",
     "types-requests>=2.32.0.20240712",
 ]
 
@@ -51,3 +52,6 @@ typecheck = "mypy src tests"
 lint = {composite = ["precommit", "typecheck"]}
 build_docs = "mkdocs build"
 publish_docs = "mkdocs gh-deploy --force"
+
+[tool.ruff.lint]
+select = ["I"]
