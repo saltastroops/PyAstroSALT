@@ -3,7 +3,9 @@ from typing import Literal
 from requests import Response
 from requests import Session as RequestsSession
 
-_DEFAULT_BASE_URL = "https://example.org"
+__all__ = ["Session"]
+
+DEFAULT_BASE_URL = "https://example.org"
 
 
 class Session:
@@ -32,7 +34,7 @@ class Session:
     def get_instance(cls) -> "Session":
         if not cls._session:
             cls._session = cls()
-            cls._session._base_url = _DEFAULT_BASE_URL
+            cls._session._base_url = DEFAULT_BASE_URL
             cls._session._requests_session = RequestsSession()
         return cls._session
 
