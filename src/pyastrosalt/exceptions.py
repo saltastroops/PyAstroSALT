@@ -1,3 +1,5 @@
+"""Exceptions which may be raised when accessing the SALT API."""
+
 from requests import Response
 
 __all__ = [
@@ -11,11 +13,14 @@ __all__ = [
 
 
 class APIError(Exception):
-    """The server responded with a status code greater than or equal to 400.
+    """An error raised when accessing the API.
+
+    Such an error should be raised if the status code of an HTTP request is greater than
+    or equal to 400. However, it may also be raised if the server response cannot be
+    parsed as expected.
 
     Attributes:
-        message: The error message returned by the server. This should be an empty
-          string if no message was returned.
+        message: The error message.
     """
 
     message: str
@@ -25,8 +30,7 @@ class APIError(Exception):
         """Initialize the exception.
 
         Args:
-            message: The error message returned by the server. This should be an empty
-              string if no message was returned.
+            message: The error message.
             response: The server response.
         """
         self.message = message
@@ -46,16 +50,14 @@ class BadRequestError(APIError):
     """The server responded with the status code 400 (Bad Request).
 
     Attributes:
-        message: The error message returned by the server. This should be an empty
-          string if no message was returned.
+        message: The error message.
     """
 
     def __init__(self, message: str, response: Response):
         """Initialize the exception.
 
         Args:
-            message: The error message returned by the server. This should be an empty
-              string if no message was returned.
+            message: The error message.
             response: The server response. The status code of the response must be 400.
         """
         if response.status_code != 400:
@@ -67,16 +69,14 @@ class NotAuthenticatedError(APIError):
     """The server responded with the status code 401 (Not Authorized).
 
     Attributes:
-        message: The error message returned by the server. This should be an empty
-          string if no message was returned.
+        message: The error message.
     """
 
     def __init__(self, message: str, response: Response):
         """Initialize the exception.
 
         Args:
-            message: The error message returned by the server. This should be an empty
-              string if no message was returned.
+            message: The error message.
             response: The server response. The status code of the response must be 401.
         """
         if response.status_code != 401:
@@ -88,16 +88,14 @@ class ForbiddenError(APIError):
     """The server responded with the status code 403 (Forbidden).
 
     Attributes:
-        message: The error message returned by the server. This should be an empty
-          string if no message was returned.
+        message: The error message.
     """
 
     def __init__(self, message: str, response: Response):
         """Initialize the exception.
 
         Args:
-            message: The error message returned by the server. This should be an empty
-              string if no message was returned.
+            message: The error message.
             response: The server response. The status code of the response must be 403.
         """
         if response.status_code != 403:
@@ -109,16 +107,14 @@ class NotFoundError(APIError):
     """The server responded with the status code 404 (Not Found).
 
     Attributes:
-        message: The error message returned by the server. This should be an empty
-          string if no message was returned.
+        message: The error message.
     """
 
     def __init__(self, message: str, response: Response):
         """Initialize the exception.
 
         Args:
-            message: The error message returned by the server. This should be an empty
-              string if no message was returned.
+            message: The error message.
             response: The server response. The status code of the response must be 404.
         """
         if response.status_code != 404:
@@ -130,15 +126,14 @@ class ServerError(APIError):
     """The server responded with the status code 500 (Internal Server Error).
 
     Attributes:
-        message: The error message returned by the server. This should be an empty
-          string if no message was returned.
+        message: The error message.
     """
 
     def __init__(self, message: str, response: Response):
         """Initialize the exception.
 
         Args:
-            message: The error message returned by the server. This should be an empty
+            message: The error message. This should be an empty
               string if no message was returned.
             response: The server response. The status code of the response must be 500.
         """
