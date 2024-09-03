@@ -1,6 +1,11 @@
+import json
 from itertools import product
+from typing import Type
 
 import pytest
+from requests_mock import Mocker
+
+from pyastrosalt.exceptions import APIError, BadRequestError
 from pyastrosalt.requests import Session
 
 HTTP_METHODS = ("get", "post", "put", "patch", "delete")
@@ -14,8 +19,10 @@ def test_session_is_a_singleton() -> None:
     assert instance_1 is instance_2
 
 
-def test_request_makes_a_request_to_the_correct_url(requests_mock) -> None:
-    requests_mock.get("https://example.org/status", text="status")
+def test_request_makes_a_request_to_the_correct_url(
+    base_url: str, requests_mock: Mocker
+) -> None:
+    requests_mock.get(f"{base_url}/status", text="status")
     session = Session.get_instance()
     response = session.request("GET", "/status")
     assert response.status_code == 200
@@ -24,9 +31,9 @@ def test_request_makes_a_request_to_the_correct_url(requests_mock) -> None:
 
 @pytest.mark.parametrize("http_method", HTTP_METHODS)
 def test_http_method_makes_a_request_to_the_correct_url(
-    http_method: str, requests_mock
+    http_method: str, base_url: str, requests_mock: Mocker
 ) -> None:
-    getattr(requests_mock, http_method)("https://example.org/status", text="status")
+    getattr(requests_mock, http_method)(f"{base_url}/status", text="status")
     session = Session.get_instance()
     response = getattr(session, http_method)("/status")
     assert response.status_code == 200
@@ -75,20 +82,24 @@ def test_http_method_requires_single_leading_slash_for_endpoint(
     assert True
 
 
-def test_request_uses_set_base_url(requests_mock) -> None:
+def test_request_uses_set_base_url(requests_mock: Mocker) -> None:
     session = Session.get_instance()
+    current_url = session.base_url
     session.base_url = "https://new.base.url"
     requests_mock.post("https://new.base.url/status")
     response = session.request("POST", "/status")
+    session.base_url = current_url
     assert response.status_code == 200
 
 
 @pytest.mark.parametrize("http_method", HTTP_METHODS)
-def test_http_method_uses_set_base_url(http_method: str, requests_mock) -> None:
+def test_http_method_uses_set_base_url(http_method: str, requests_mock: Mocker) -> None:
     session = Session.get_instance()
+    current_url = session.base_url
     session.base_url = "https://new.base.url"
     getattr(requests_mock, http_method)("https://new.base.url/status")
     response = getattr(session, http_method)("/status")
+    session.base_url = current_url
     assert response.status_code == 200
 
 

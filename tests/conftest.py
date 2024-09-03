@@ -1,7 +1,6 @@
 from typing import Generator
 
 import pytest
-
 from pyastrosalt.requests import Session
 
 
