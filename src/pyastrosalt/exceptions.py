@@ -1,5 +1,14 @@
 from requests import Response
 
+__all__ = [
+    "APIError",
+    "BadRequestError",
+    "NotAuthenticatedError",
+    "ForbiddenError",
+    "NotFoundError",
+    "ServerError",
+]
+
 
 class APIError(Exception):
     """The server responded with a status code greater than or equal to 400.
