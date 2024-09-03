@@ -1,12 +1,19 @@
 import json
 from itertools import product
-from typing import Type
+from typing import Any, Callable, Optional, Type
 
 import pytest
-from requests_mock import Mocker
-
-from pyastrosalt.exceptions import APIError, BadRequestError
+from pyastrosalt.exceptions import (
+    APIError,
+    BadRequestError,
+    ForbiddenError,
+    NotAuthenticatedError,
+    NotFoundError,
+    ServerError,
+)
 from pyastrosalt.requests import Session
+from requests import Request
+from requests_mock import Mocker
 
 HTTP_METHODS = ("get", "post", "put", "patch", "delete")
 
@@ -107,4 +114,168 @@ def test_trailing_slashes_are_forbidden_for_the_base_url():
     session = Session.get_instance()
     with pytest.raises(ValueError, match="trailing slash"):
         session.base_url = "https://slashes.example.org/"
+    assert True
+
+
+@pytest.mark.parametrize(
+    "status_code, exception_class",
+    [
+        (400, BadRequestError),
+        (401, NotAuthenticatedError),
+        (403, ForbiddenError),
+        (404, NotFoundError),
+        (500, ServerError),
+        (418, APIError),
+    ],
+)
+def test_request_raises_api_exceptions(
+    status_code: int,
+    exception_class: Type[APIError],
+    base_url: str,
+    requests_mock: Mocker,
+) -> None:
+    message = "Something is wrong."
+    response_payload = {"message": message}
+    requests_mock.get(
+        f"{base_url}/status",
+        status_code=status_code,
+        text=json.dumps(response_payload),
+    )
+    with pytest.raises(exception_class, match=message):
+        session = Session.get_instance()
+        session.request("GET", "/status")
+
+
+@pytest.mark.parametrize(
+    "http_method, status_code, exception_class",
+    [
+        ("get", 400, BadRequestError),
+        ("post", 401, NotAuthenticatedError),
+        ("put", 403, ForbiddenError),
+        ("patch", 404, NotFoundError),
+        ("delete", 500, ServerError),
+        ("get", 418, APIError),
+    ],
+)
+def test_http_method_raises_api_exceptions(
+    http_method: str,
+    status_code: int,
+    exception_class: Type[APIError],
+    base_url: str,
+    requests_mock: Mocker,
+) -> None:
+    message = "Something is wrong."
+    response_payload = {"message": message}
+    getattr(requests_mock, http_method)(
+        f"{base_url}/status",
+        status_code=status_code,
+        text=json.dumps(response_payload),
+    )
+    with pytest.raises(exception_class, match=message):
+        session = Session.get_instance()
+        getattr(session, http_method)("/status")
+
+
+@pytest.mark.parametrize("response_payload", ["no valid JSON", "{}"])
+def test_request_handles_errors_without_message(
+    response_payload: str, base_url: str, requests_mock: Mocker
+) -> None:
+    requests_mock.get(
+        f"https://example.org/status", status_code=400, text=response_payload
+    )
+    with pytest.raises(BadRequestError, match="API request error."):
+        session = Session.get_instance()
+        session.request("GET", "/status")
+
+
+@pytest.mark.parametrize(
+    "http_method, response_payload", product(HTTP_METHODS, ["no valid JSON", "{}"])
+)
+def test_http_method_handles_errors_without_message(
+    http_method: str, response_payload: str, base_url: str, requests_mock: Mocker
+) -> None:
+    getattr(requests_mock, http_method)(
+        f"{base_url}/status", status_code=400, text=response_payload
+    )
+    with pytest.raises(BadRequestError, match="API request error."):
+        session = Session.get_instance()
+        getattr(session, http_method)("/status")
+
+
+def test_logging_in(base_url: str, requests_mock: Mocker) -> None:
+    username = "john"
+    password = "top_secret"
+    credentials = {"username": username, "password": password}
+    token = "secret_token"
+    token_payload = {"token": token}
+    auth_header = f"Bearer {token}"
+
+    requests_mock.post(
+        f"{base_url}/token",
+        text=json.dumps(token_payload),
+        additional_matcher=lambda req: req.json() == credentials,
+    )
+
+    requests_mock.get(
+        f"{base_url}/proposals",
+        additional_matcher=lambda req: req.headers.get("Authorization") == auth_header,
+    )
+
+    # You aren't logged in.
+    session = Session.get_instance()
+    assert not session.logged_in
+
+    # Log in and make a request.
+    session.login(username, password)
+    session.get("/proposals")
+
+    # You are logged in.
+    assert session.logged_in
+
+
+@pytest.mark.parametrize("token_payload", ["invalid JSON", "{}"])
+def test_login_raises_api_error_for_invalid_server_response(
+    token_payload: str, base_url: str, requests_mock: Mocker
+) -> None:
+    username = "john"
+    password = "top_secret"
+
+    requests_mock.post(f"{base_url}/token", text=json.dumps(token_payload))
+
+    with pytest.raises(APIError, match="parsed"):
+        session = Session.get_instance()
+        session.login(username, password)
+
+
+def test_request_after_logging_out(base_url: str, requests_mock: Mocker) -> None:
+    username = "john"
+    password = "top_secret"
+    credentials = {"username": username, "password": password}
+    token = "secret_token"
+    token_payload = {"token": token}
+
+    requests_mock.post(
+        f"{base_url}/token",
+        text=json.dumps(token_payload),
+        additional_matcher=lambda req: req.json() == credentials,
+    )
+
+    requests_mock.get(
+        f"{base_url}/proposals",
+        additional_matcher=lambda req: "Authorization" not in req.headers,
+    )
+
+    # Log in, log out again and make a request.
+    session = Session.get_instance()
+    session.login(username, password)
+    session.logout()
+    session.get("/proposals")
+
+    # You are logged out.
+    assert not session.logged_in
+
+
+def test_logout_may_be_called_if_not_logged_in():
+    session = Session.get_instance()
+    session.logout()
     assert True

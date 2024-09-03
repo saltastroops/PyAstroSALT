@@ -15,8 +15,18 @@ from typing import IO, Dict, Literal, Optional, Sequence, Tuple, Union
 
 from requests import Response
 from requests import Session as RequestsSession
+from requests.exceptions import JSONDecodeError as _JSONDecodeError
 
 __all__ = ["Session"]
+
+from pyastrosalt.exceptions import (
+    APIError,
+    BadRequestError,
+    ForbiddenError,
+    NotAuthenticatedError,
+    NotFoundError,
+    ServerError,
+)
 
 DEFAULT_BASE_URL = "https://example.org"
 
@@ -62,6 +72,49 @@ class Session:
             raise ValueError("The base URL must not have a trailing slash.")
         self._base_url = value
 
+    @property
+    def logged_in(self) -> bool:
+        """Indicates whether you are currently logged in."""
+        return "Authorization" in self._requests_session.headers
+
+    def login(self, username: str, password: str) -> None:
+        """Log in to the SALT API server.
+
+        The method requests an API token from the API server, which will be sent in an
+        HTTP header in all further HTTP requests.
+
+        Use the `logout` method to log out again.
+
+        Args:
+            username: A valid SALT account username.
+            password: The password for the username.
+
+        Raises:
+            NotAuthenticatedError: The username or password is wrong.
+            APIError: The server response cannot be parsed.
+        """
+        # Request an API token.
+        data = {"username": username, "password": password}
+        response = self.post("/token", json=data)
+        try:
+            token = response.json()["token"]
+        except (_JSONDecodeError, KeyError, TypeError):
+            raise APIError("The server response cannot be parsed.", response)
+
+        # Send the token in an Authorization header.
+        self._requests_session.headers.update({"Authorization": f"Bearer {token}"})
+
+    def logout(self):
+        """Log out from the API server.
+
+        This method ensures that no authorization header will be sent any longer when
+        requests are made.
+
+        The method does nothing if you are not logged in when calling it.
+        """
+        if self.logged_in:
+            self._requests_session.headers.pop("Authorization")
+
     def request(
         self,
         method: Literal["GET", "POST", "PUT", "PATCH", "DELETE"],
@@ -104,8 +157,14 @@ class Session:
                 '"/status".'
             )
 
+        # Make the API request
         url = self.base_url + endpoint
-        return self._requests_session.request(method, url, **kwargs)
+        response = self._requests_session.request(method, url, **kwargs)
+
+        # Handle errors
+        self._handle_errors(response)
+
+        return response
 
     def get(
         self,
@@ -253,3 +312,30 @@ class Session:
             ValueError: The endpoint is invalid.
         """
         return self.request("DELETE", endpoint, **kwargs)
+
+    @classmethod
+    def _handle_errors(cls, response: Response) -> None:
+        status_code = response.status_code
+        if status_code < 400:
+            # No error.
+            return
+
+        # Get the error message. We assume that the server has returned a JSON object
+        # with a message member. Ifd that's wrong we use a default message.
+        default_message = "API request error."
+        try:
+            message = response.json()["message"]
+        except (_JSONDecodeError, KeyError, TypeError):
+            message = default_message
+        if status_code == 400:
+            raise BadRequestError(message, response)
+        elif status_code == 401:
+            raise NotAuthenticatedError(message, response)
+        elif status_code == 403:
+            raise ForbiddenError(message, response)
+        elif status_code == 404:
+            raise NotFoundError(message, response)
+        elif status_code == 500:
+            raise ServerError(message, response)
+        else:
+            raise APIError(message, response)
