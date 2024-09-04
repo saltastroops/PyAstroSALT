@@ -19,3 +19,8 @@ def base_url() -> Generator[str, None, None]:
 
     # Restore the original base URL.
     session.base_url = current_url
+
+
+@pytest.fixture(autouse=True, scope="function")
+def reset_session():
+    Session._session = None
