@@ -1,3 +1,5 @@
+"""nox configuration."""
+
 import argparse
 import os
 
@@ -11,24 +13,28 @@ nox.options.sessions = ["test", "docs"]
 
 @nox.session
 def lint(session):
+    """Lint the code."""
     session.run_install("pdm", "install", "-G", "lint", external=True)
     session.run("pdm", "test", external=True)
 
 
 @nox.session(python=["3.9", "3.10", "3.11", "3.12"])
 def test(session):
+    """Test the code."""
     session.run_install("pdm", "install", "-G", "test", external=True)
     session.run("pdm", "test", external=True)
 
 
 @nox.session
 def build_docs(session):
+    """Build the documentation."""
     session.run_install("pdm", "install", "-G", "docs", external=True)
     session.run("pdm", "build_docs", external=True)
 
 
 @nox.session
 def publish_docs(session):
+    """Publish the documentation."""
     session.run_install("pdm", "install", "-G", "docs", external=True)
     session.run("pdm", "publish_docs", external=True)
 
