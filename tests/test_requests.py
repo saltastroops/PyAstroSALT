@@ -229,15 +229,21 @@ def test_http_method_handles_errors_without_message(
 def test_logging_in(base_url: str, requests_mock: Mocker) -> None:
     username = "john"
     password = "top_secret"
-    credentials = {"username": username, "password": password}
     token = "secret_token"
     token_payload = {"token": token}
     auth_header = f"Bearer {token}"
 
+    def match_token_request(request):
+        return (
+            f"username={username}" in request.text
+            and f"password={password}" in request.text
+            and request.headers["Content-Type"] == "application/x-www-form-urlencoded"
+        )
+
     requests_mock.post(
         f"{base_url}/token",
         text=json.dumps(token_payload),
-        additional_matcher=lambda req: req.json() == credentials,
+        additional_matcher=match_token_request,
     )
 
     requests_mock.get(
@@ -249,8 +255,11 @@ def test_logging_in(base_url: str, requests_mock: Mocker) -> None:
     session = Session.get_instance()
     assert not session.logged_in
 
-    # Log in and make a request.
+    # Log in.
     session.login(username, password)
+
+    # Make a request. The request is accepted by the request mocker only if logging has
+    # worked, as the Authorixzation HTTP header is checked for.
     session.get("/proposals")
 
     # You are logged in.

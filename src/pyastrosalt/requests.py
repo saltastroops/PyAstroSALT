@@ -95,7 +95,7 @@ class Session:
         """
         # Request an API token.
         data = {"username": username, "password": password}
-        response = self.post("/token", json=data)
+        response = self.post("/token", data=data)
         try:
             token = response.json()["token"]
         except (_JSONDecodeError, KeyError, TypeError):
