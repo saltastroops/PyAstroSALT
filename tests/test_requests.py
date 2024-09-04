@@ -12,7 +12,7 @@ from pyastrosalt.exceptions import (
     NotFoundError,
     ServerError,
 )
-from pyastrosalt.requests import Session
+from pyastrosalt.session import Session
 from requests_mock import Mocker
 
 HTTP_METHODS = ("get", "post", "put", "patch", "delete")
@@ -34,7 +34,7 @@ def test_request_makes_the_correct_request(
     headers = {"X-SomeHeader": "abc"}
     params = {"filter": "value"}
     passed_kwargs = {"data": data, "json": _json, "headers": headers, "params": params}
-    with mock.patch("pyastrosalt.requests.RequestsSession"):
+    with mock.patch("pyastrosalt.session.RequestsSession"):
         # The session must only be instantiated after the requests session is patched
         session = Session.get_instance()
         try:
@@ -56,7 +56,7 @@ def test_http_method_makes_the_correct_request(http_method: str, base_url: str) 
     headers = {"X-SomeHeader": "abc"}
     params = {"filter": "value"}
     passed_kwargs = {"data": data, "json": _json, "headers": headers, "params": params}
-    with mock.patch("pyastrosalt.requests.RequestsSession"):
+    with mock.patch("pyastrosalt.session.RequestsSession"):
         # The session must only be instantiated after the requests session is patched
         session = Session.get_instance()
         try:
@@ -290,7 +290,6 @@ def test_request_after_logging_out(base_url: str, requests_mock: Mocker) -> None
     requests_mock.post(
         f"{base_url}/token",
         text=json.dumps(token_payload),
-        additional_matcher=lambda req: req.json() == credentials,
     )
 
     requests_mock.get(

@@ -1,7 +1,7 @@
 from typing import Generator
 
 import pytest
-from pyastrosalt.requests import Session
+from pyastrosalt.session import Session
 
 
 @pytest.fixture(autouse=True, scope="function")
