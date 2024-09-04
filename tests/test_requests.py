@@ -230,7 +230,7 @@ def test_logging_in(base_url: str, requests_mock: Mocker) -> None:
     username = "john"
     password = "top_secret"
     token = "secret_token"
-    token_payload = {"token": token}
+    token_payload = {"access_token": token}
     auth_header = f"Bearer {token}"
 
     def match_token_request(request):
@@ -285,7 +285,7 @@ def test_request_after_logging_out(base_url: str, requests_mock: Mocker) -> None
     password = "top_secret"
     credentials = {"username": username, "password": password}
     token = "secret_token"
-    token_payload = {"token": token}
+    token_payload = {"access_token": token}
 
     requests_mock.post(
         f"{base_url}/token",

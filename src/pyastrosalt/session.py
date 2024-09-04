@@ -97,7 +97,7 @@ class Session:
         data = {"username": username, "password": password}
         response = self.post("/token", data=data)
         try:
-            token = response.json()["token"]
+            token = response.json()["access_token"]
         except (_JSONDecodeError, KeyError, TypeError):
             raise APIError("The server response cannot be parsed.", response)
 
