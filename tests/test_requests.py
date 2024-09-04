@@ -1,6 +1,7 @@
 import json
 from itertools import product
 from typing import Any, Callable, Optional, Type
+from unittest import mock
 
 import pytest
 from pyastrosalt.exceptions import (
@@ -12,7 +13,6 @@ from pyastrosalt.exceptions import (
     ServerError,
 )
 from pyastrosalt.requests import Session
-from requests import Request
 from requests_mock import Mocker
 
 HTTP_METHODS = ("get", "post", "put", "patch", "delete")
@@ -26,25 +26,49 @@ def test_session_is_a_singleton() -> None:
     assert instance_1 is instance_2
 
 
-def test_request_makes_a_request_to_the_correct_url(
+def test_request_makes_the_correct_request(
     base_url: str, requests_mock: Mocker
 ) -> None:
-    requests_mock.get(f"{base_url}/status", text="status")
-    session = Session.get_instance()
-    response = session.request("GET", "/status")
-    assert response.status_code == 200
-    assert response.text == "status"
+    data = {"some": "data"}
+    _json = {"start": "now"}
+    headers = {"X-SomeHeader": "abc"}
+    params = {"filter": "value"}
+    passed_kwargs = {"data": data, "json": _json, "headers": headers, "params": params}
+    with mock.patch("pyastrosalt.requests.RequestsSession"):
+        # The session must only be instantiated after the requests session is patched
+        session = Session.get_instance()
+        try:
+            session.request("GET", "/status", **passed_kwargs)
+        except Exception:
+            pass  # The error is caused by the mocking.
+
+        session._requests_session.request.assert_called()  # type: ignore
+        used_args = session._requests_session.request.call_args.args  # type: ignore
+        used_kwargs = session._requests_session.request.call_args.kwargs  # type: ignore
+        assert list(used_args) == ["GET", f"{base_url}/status"]
+        assert used_kwargs == passed_kwargs
 
 
 @pytest.mark.parametrize("http_method", HTTP_METHODS)
-def test_http_method_makes_a_request_to_the_correct_url(
-    http_method: str, base_url: str, requests_mock: Mocker
-) -> None:
-    getattr(requests_mock, http_method)(f"{base_url}/status", text="status")
-    session = Session.get_instance()
-    response = getattr(session, http_method)("/status")
-    assert response.status_code == 200
-    assert response.text == "status"
+def test_http_method_makes_the_correct_request(http_method: str, base_url: str) -> None:
+    data = {"some": "data"}
+    _json = {"start": "now"}
+    headers = {"X-SomeHeader": "abc"}
+    params = {"filter": "value"}
+    passed_kwargs = {"data": data, "json": _json, "headers": headers, "params": params}
+    with mock.patch("pyastrosalt.requests.RequestsSession"):
+        # The session must only be instantiated after the requests session is patched
+        session = Session.get_instance()
+        try:
+            getattr(session, http_method)("/status", **passed_kwargs)
+        except Exception:
+            pass  # The error is caused by the mocking.
+
+        session._requests_session.request.assert_called()  # type: ignore
+        used_args = session._requests_session.request.call_args.args  # type: ignore
+        used_kwargs = session._requests_session.request.call_args.kwargs  # type: ignore
+        assert list(used_args) == [http_method.upper(), f"{base_url}/status"]
+        assert used_kwargs == passed_kwargs
 
 
 @pytest.mark.parametrize(

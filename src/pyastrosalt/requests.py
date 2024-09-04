@@ -11,7 +11,7 @@ is the first argument, which in the `requests` library must be the full URL, but
 methods of the session instance must be just the endpoint, such as `/status`.
 """
 
-from typing import IO, Dict, Literal, Optional, Sequence, Tuple, Union
+from typing import IO, Any, Dict, Literal, Optional, Sequence, Tuple, Union
 
 from requests import Response
 from requests import Session as RequestsSession
@@ -200,6 +200,7 @@ class Session:
         self,
         endpoint: str,
         data: Optional[Union[Dict, Sequence[Tuple], bytes, IO]] = None,
+        json: Optional[Any] = None,
         **kwargs,
     ) -> Response:
         """Make a POST request to the API server.
@@ -209,6 +210,7 @@ class Session:
               endpoint must start with a single slash.
             data: A dictionary, list of tuples, bytes, or file-like object to send in
               the body.
+            json: A JSON-serializable Python object to send in the body.
             **kwargs: Keyword arguments, as accepted by the `request` method of the
               `requests` library.
 
@@ -225,12 +227,13 @@ class Session:
             ServerError: The server responded with a 500 (Internal Server Error) error.
             ValueError: The endpoint is invalid.
         """
-        return self.request("POST", endpoint, data=data, **kwargs)
+        return self.request("POST", endpoint, data=data, json=json, **kwargs)
 
     def put(
         self,
         endpoint: str,
         data: Optional[Union[Dict, Sequence[Tuple], bytes, IO]] = None,
+        json: Optional[Any] = None,
         **kwargs,
     ) -> Response:
         """Make a PUT request to the API server.
@@ -240,6 +243,7 @@ class Session:
               endpoint must start with a single slash.
             data: A dictionary, list of tuples, bytes, or file-like object to send in
               the body.
+            json: A JSON-serializable Python object to send in the body.
             **kwargs: Keyword arguments, as accepted by the `request` method of the
               `requests` library.
 
@@ -256,12 +260,13 @@ class Session:
             ServerError: The server responded with a 500 (Internal Server Error) error.
             ValueError: The endpoint is invalid.
         """
-        return self.request("PUT", endpoint, **kwargs)
+        return self.request("PUT", endpoint, data=data, json=json, **kwargs)
 
     def patch(
         self,
         endpoint: str,
         data: Optional[Union[Dict, Sequence[Tuple], bytes, IO]] = None,
+        json: Optional[Any] = None,
         **kwargs,
     ) -> Response:
         """Make a PATCH request to the API server.
@@ -271,6 +276,7 @@ class Session:
               endpoint must start with a single slash.
             data: A dictionary, list of tuples, bytes, or file-like object to send in
               the body.
+            json: A JSON-serializable Python object to send in the body.
             **kwargs: Keyword arguments, as accepted by the `request` method of the
               `requests` library.
 
@@ -287,7 +293,7 @@ class Session:
             ServerError: The server responded with a 500 (Internal Server Error) error.
             ValueError: The endpoint is invalid.
         """
-        return self.request("PATCH", endpoint, **kwargs)
+        return self.request("PATCH", endpoint, data=data, json=json, **kwargs)
 
     def delete(self, endpoint: str, **kwargs) -> Response:
         """Make a DELETE request to the API server.
