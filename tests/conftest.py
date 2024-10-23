@@ -1,7 +1,15 @@
 from typing import Generator
 
 import pytest
+import responses
+
 from pyastrosalt.session import Session
+
+
+@pytest.fixture(autouse=True)
+def mocked_responses():
+    with responses.RequestsMock() as rsps:
+        yield rsps
 
 
 @pytest.fixture(autouse=True, scope="function")

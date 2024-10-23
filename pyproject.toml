@@ -10,6 +10,8 @@ authors = [{name = "SALT Astronomy Operations", email = "salthelp@salt.ac.za"}]
 requires-python = ">=3.9"
 dependencies = [
     "requests>=2.32.3",
+    "defusedxml>=0.7.1",
+    "types-defusedxml>=0.7.0.20240218",
 ]
 license = {file = "LICENSE"}
 classifiers = ["License :: OSI Approved :: MIT License"]
@@ -39,9 +41,10 @@ test = [
     "pre-commit>=3.7.1",
     "pytest>=8.2.2",
     "pytest-cov>=5.0.0",
-    "requests-mock>=1.12.1",
-    "ruf>=0.2.2",
+    "responses>=0.25.3",
+    "ruff>=0.2.2",
     "types-requests>=2.32.0.20240712",
+    "requests-mock>=1.12.1",
 ]
 
 [tool.pdm.scripts]

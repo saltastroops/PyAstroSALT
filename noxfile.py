@@ -18,7 +18,7 @@ def lint(session):
     session.run("pdm", "test", external=True)
 
 
-@nox.session(python=["3.9", "3.10", "3.11", "3.12"])
+@nox.session(python=["3.10", "3.11", "3.12"])
 def test(session):
     """Test the code."""
     session.run_install("pdm", "install", "-G", "test", external=True)

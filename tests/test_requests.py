@@ -4,6 +4,8 @@ from typing import Any, Callable, Optional, Type
 from unittest import mock
 
 import pytest
+from requests_mock import Mocker
+
 from pyastrosalt.exceptions import (
     APIError,
     BadRequestError,
@@ -13,7 +15,6 @@ from pyastrosalt.exceptions import (
     ServerError,
 )
 from pyastrosalt.session import Session
-from requests_mock import Mocker
 
 HTTP_METHODS = ("get", "post", "put", "patch", "delete")
 
