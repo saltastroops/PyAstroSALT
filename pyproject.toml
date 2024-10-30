@@ -45,6 +45,7 @@ test = [
     "ruff>=0.2.2",
     "types-requests>=2.32.0.20240712",
     "requests-mock>=1.12.1",
+    "freezegun>=1.5.1",
 ]
 
 [tool.pdm.scripts]
