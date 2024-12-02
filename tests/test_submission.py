@@ -18,7 +18,7 @@ from pyastrosalt.submission import (
     submit,
 )
 
-_PROPOSAL_FILE = pathlib.Path(__file__).parent / "data" / "proposal.zip"
+_PROPOSAL_FILE = pathlib.Path(__file__).parent / "data" / "proposal"
 
 
 def _create_zip(contents: list[dict]) -> BytesIO:
@@ -42,7 +42,7 @@ def test_submission(
     proposal_content = _PROPOSAL_FILE.read_bytes()
     proposal_code = "2024-2-SCI-042"
     req_data = {"proposal_code": proposal_code}
-    req_files = {"proposal.zip": proposal_content}
+    req_files = {"proposal": proposal_content}
     mocked_responses.post(
         f"{base_url}/submissions/",
         json={"submission_identifier": "abcd"},
@@ -57,7 +57,7 @@ def test_submission_without_proposal_code(
     base_url: str, mocked_responses: RequestsMock
 ):
     proposal_content = _PROPOSAL_FILE.read_bytes()
-    req_files = {"proposal.zip": proposal_content}
+    req_files = {"proposal": proposal_content}
     mocked_responses.post(
         f"{base_url}/submissions/",
         json={"submission_identifier": "abcd"},
@@ -81,7 +81,7 @@ def test_submission_accepts_proposal_blocks_and_block(
     )
     proposal_code = "2024-2-SCI-042"
     req_data = {"proposal_code": proposal_code}
-    req_files = {"proposal.zip": proposal_file}
+    req_files = {"proposal": proposal_file}
     mocked_responses.post(
         f"{base_url}/submissions/",
         json={"submission_identifier": "abcd"},
