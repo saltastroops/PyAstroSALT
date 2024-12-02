@@ -249,7 +249,11 @@ def _check_submitted_content(file: IO[Any], proposal_code: str | None) -> None:
             with z.open("Proposal.xml", "r") as p:
                 tree = ET.parse(p)
                 code = tree.getroot().attrib.get("code")
-                if code and proposal_code != code:
+                if (
+                    code
+                    and not code.startswith("Unsubmitted")
+                    and proposal_code != code
+                ):
                     raise ValueError(
                         f"The proposal code argument ({proposal_code}) does not match "
                         f"the proposal code in the submitted Proposal.xml file "
