@@ -209,9 +209,9 @@ def _submit(file: IO[Any], proposal_code: str | None) -> Submission:
     response = session.post(
         "/submissions/",
         data=data,
-        files={"proposal.zip": file},
+        files={"proposal": file},
     )
-    return Submission(response.json()["identifier"])
+    return Submission(response.json()["submission_identifier"])
 
 
 def _check_submitted_content(file: IO[Any], proposal_code: str | None) -> None:

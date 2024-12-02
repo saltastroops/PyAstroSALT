@@ -45,7 +45,7 @@ def test_submission(
     req_files = {"proposal.zip": proposal_content}
     mocked_responses.post(
         f"{base_url}/submissions/",
-        json={"identifier": "abcd"},
+        json={"submission_identifier": "abcd"},
         match=[
             responses.matchers.multipart_matcher(files=req_files, data=req_data),
         ],
@@ -60,7 +60,7 @@ def test_submission_without_proposal_code(
     req_files = {"proposal.zip": proposal_content}
     mocked_responses.post(
         f"{base_url}/submissions/",
-        json={"identifier": "abcd"},
+        json={"submission_identifier": "abcd"},
         match=[
             responses.matchers.multipart_matcher(files=req_files, data={}),
         ],
@@ -84,7 +84,7 @@ def test_submission_accepts_proposal_blocks_and_block(
     req_files = {"proposal.zip": proposal_file}
     mocked_responses.post(
         f"{base_url}/submissions/",
-        json={"identifier": "abcd"},
+        json={"submission_identifier": "abcd"},
         match=[
             responses.matchers.multipart_matcher(files=req_files, data=req_data),
         ],
@@ -133,7 +133,9 @@ def test_submission_accepts_a_consistent_proposal_code(
 <Proposal xmlns="http://www.salt.ac.za/PIPT/Proposal/Phase2" code="2024-2-SCI-042"/>
 """
     file = _create_zip([{"filename": "Proposal.xml", "content": content}])
-    mocked_responses.post(f"{base_url}/submissions/", json={"identifier": "abcd"})
+    mocked_responses.post(
+        f"{base_url}/submissions/", json={"submission_identifier": "abcd"}
+    )
 
     submit(file, proposal_code=proposal_code)
 
