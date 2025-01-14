@@ -141,7 +141,7 @@ class Submission:
         self._last_queried_at = datetime.now()
         response = self.session.get(
             f"/submissions/{self.identifier}/progress",
-            params={"from_entry_number": len(self._log_entries) + 1},
+            params={"from-entry-number": len(self._log_entries) + 1},
         ).json()
 
         # Update the status and proposal code.
