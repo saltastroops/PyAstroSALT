@@ -151,11 +151,11 @@ class Submission:
         # Update the log entries.
         new_log_entries = [
             SubmissionLogEntry(
-                logged_at=datetime.fromisoformat(l["logged_at"]),
-                message_type=SubmissionMessageType(l["message_type"]),
-                message=l["message"],
+                logged_at=datetime.fromisoformat(entry["logged_at"]),
+                message_type=SubmissionMessageType(entry["message_type"]),
+                message=entry["message"],
             )
-            for l in response["log_entries"]
+            for entry in response["log_entries"]
         ]
         self._log_entries += new_log_entries
 
