@@ -210,21 +210,21 @@ def test_submission_progress_methods_make_correct_queries(
     mocked_responses.add_callback(
         "GET",
         f"{base_url}/submissions/{identifier}/progress",
-        match=[responses.matchers.query_string_matcher("from_entry_number=1")],
+        match=[responses.matchers.query_string_matcher("from-entry-number=1")],
         callback=request_callback,
         content_type="application/json",
     )
     mocked_responses.add_callback(
         "GET",
         f"{base_url}/submissions/{identifier}/progress",
-        match=[responses.matchers.query_string_matcher("from_entry_number=3")],
+        match=[responses.matchers.query_string_matcher("from-entry-number=3")],
         callback=request_callback,
         content_type="application/json",
     )
     mocked_responses.add_callback(
         "GET",
         f"{base_url}/submissions/{identifier}/progress",
-        match=[responses.matchers.query_string_matcher("from_entry_number=7")],
+        match=[responses.matchers.query_string_matcher("from-entry-number=7")],
         callback=request_callback,
         content_type="application/json",
     )
@@ -277,21 +277,21 @@ def test_submission_progress_properties_return_correct_values(
     mocked_responses.add_callback(
         "GET",
         f"{base_url}/submissions/{identifier}/progress",
-        match=[responses.matchers.query_string_matcher("from_entry_number=1")],
+        match=[responses.matchers.query_string_matcher("from-entry-number=1")],
         callback=request_callback,
         content_type="application/json",
     )
     mocked_responses.add_callback(
         "GET",
         f"{base_url}/submissions/{identifier}/progress",
-        match=[responses.matchers.query_string_matcher("from_entry_number=3")],
+        match=[responses.matchers.query_string_matcher("from-entry-number=3")],
         callback=request_callback,
         content_type="application/json",
     )
     mocked_responses.add_callback(
         "GET",
         f"{base_url}/submissions/{identifier}/progress",
-        match=[responses.matchers.query_string_matcher("from_entry_number=4")],
+        match=[responses.matchers.query_string_matcher("from-entry-number=4")],
         callback=request_callback,
         content_type="application/json",
     )
@@ -367,7 +367,7 @@ def test_submission_progress_queries_every_ten_seconds(
 ):
     identifier = "abcd"
     url = f"{base_url}/submissions/{identifier}/progress"
-    full_url = f"{url}?from_entry_number=1"
+    full_url = f"{url}?from-entry-number=1"
     mocked_responses.get(
         url,
         json=_create_progress_response("In progress", [], [], None),

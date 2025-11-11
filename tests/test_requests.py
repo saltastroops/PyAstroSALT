@@ -1,6 +1,6 @@
 import json
 from itertools import product
-from typing import Any, Callable, Optional, Type
+from typing import Type
 from unittest import mock
 
 import pytest
@@ -206,7 +206,7 @@ def test_request_handles_errors_without_message(
     response_payload: str, base_url: str, requests_mock: Mocker
 ) -> None:
     requests_mock.get(
-        f"https://example.org/status", status_code=400, text=response_payload
+        "https://example.org/status", status_code=400, text=response_payload
     )
     with pytest.raises(BadRequestError, match="API request error."):
         session = Session.get_instance()
@@ -284,7 +284,6 @@ def test_login_raises_api_error_for_invalid_server_response(
 def test_request_after_logging_out(base_url: str, requests_mock: Mocker) -> None:
     username = "john"
     password = "top_secret"
-    credentials = {"username": username, "password": password}
     token = "secret_token"
     token_payload = {"access_token": token}
 
