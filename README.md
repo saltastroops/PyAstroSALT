@@ -8,66 +8,31 @@ pip install pyastrosalt
 
 ## Development and deployment
 
-[PDM](https://pdm-project.org/en/latest/) is used as the package manager for this project. There are several [ways to install PDM](https://pdm-project.org/en/latest/#installation); one is to use [pipx](https://pipx.pypa.io/stable/).
-
-```bash
-pipx install pdm
-```
-
-Also, [nox](https://nox.thea.codes/en/stable/index.html) is used as a test runner. It can be installed with pipx.
-```bash
-pipx install nox
-```
+[uv](https://docs.astral.sh/uv/) is used as the package manager for this project. There are several ways to install uv; see the official [installation instructions]((https://docs.astral.sh/uv/getting-started/installation/).
 
 ### Managing dependencies
 
- Use PDM's `add` command for adding dependencies. For example:
+ Use uv's `add` command for adding dependencies. For example:
 
 ```bash
-pdm add numpy
+uv add numpy
 ```
 
-To add an optional dependency, use `-G/--group <name>` option. For example, if you want to add `pyjwt` to the optional group `jwt`:
+To add an optional dependency, use the `--optional` option. For example, if you want to add `pyjwt` to the optional group `secure`:
 
 ```bash
-pdm add -G pyjwt
+uv add --optional secure pyjwt
 ```
 
 Optional groups are listed in the `project.optional-dependencies` section of `pyproject.toml`.
 
-In case the dependency is required for development purposes only, you should use the `-dG <name>` option. For example, the following will add pytest to the development only group `test`:
+In case the dependency is required for development purposes only, you should use the `--dev` option. For example, the following will add pytest to the development only group:
 
 ```bash
-pdm add -dG test pytest
+uv add --dev pytest
 ```
 
-Development only dependency groups are listed in the `tool.pdm.dev-dependencies` section of `pyproject.toml`. They `re not included in the published package.
-
-### Linting and testing
-
-There are some PDM scripts you can use during development, in addition to PDM's own commands.
-
-Script | Description
---- | ---
-`lint` | Lint the code. This includes running the precommit and mypy scripts.
-`test` | Run the tests (without coverage).
-`testcov` | Run the tests (with coverage).
-`precommit` | Run pre-commit on all files.
-`typecheck` | Run mypy.
-
-You should run `pdm lint` and `pdm test` frequently, ideally before every commit. Before pushing to GitHub, you should run `nox` (with no arguments); this will run the lint and test PDM scripts, using multiple Python versions for the test one. It will also check that the documentation can be generated.
-
-If you want to use [pre-commit](https://pre-commit.com), you can add a git hook for committing by running
-
-```bash
-pre-commit install
-```
-
-If you don't want to use it any longer, you can remove the git hook again by running
-
-```bash
-pre-commit uninstall
-```
+Development only dependency groups are listed in the `dependency-groups` section of `pyproject.toml`. They `re not included in the published package.
 
 ### Documentation
 
