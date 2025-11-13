@@ -28,7 +28,7 @@ from pyastrosalt.exceptions import (
     ServerError,
 )
 
-DEFAULT_BASE_URL = "https://example.org"
+DEFAULT_BASE_URL = "https://api.salt.ac.za"
 
 
 class Session:
