@@ -57,7 +57,7 @@ class Session:
         """Return the session for making HTTP requests to the SALT API."""
         if not cls._session:
             cls._session = cls()
-            cls._session._base_url = DEFAULT_BASE_URL
+            cls._session._base_url = DEFAULT_BASE_URL.rstrip("/")
             cls._session._requests_session = RequestsSession()
         return cls._session
 
