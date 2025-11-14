@@ -3,7 +3,13 @@ from typing import Generator
 import pytest
 import responses
 
+from pyastrosalt import session
 from pyastrosalt.session import Session
+
+
+@pytest.fixture(autouse=True, scope="session")
+def set_base_url():
+    session.DEFAULT_BASE_URL = "https://example.org/"
 
 
 @pytest.fixture(autouse=True)
