@@ -1,9 +1,9 @@
 [project]
 name = "PyAstroSALT"
+dynamic = ["version"]
 description = "API access for the Southern African Large elescope (SALT)."
 readme = "README.md"
 authors = [{name = "SALT Astronomy Operations", email = "salthelp@salt.ac.za"}]
-version = "0.1.0"
 requires-python = ">=3.11"
 dependencies = [
     "defusedxml>=0.7.1",
@@ -42,3 +42,6 @@ ignore = [
 
 [tool.ruff.lint.pydocstyle]
 convention = "google"
+
+[tool.setuptools.dynamic]
+version = {attr = "pyastrosalt.__version__"}
