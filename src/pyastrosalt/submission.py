@@ -10,6 +10,7 @@ from zipfile import ZipFile, is_zipfile
 import defusedxml.ElementTree as ET
 
 from pyastrosalt.session import Session
+from pyastrosalt.util.time import SystemTimeProvider
 
 
 class SubmissionStatus(str, Enum):
@@ -81,7 +82,9 @@ class Submission:
     other properties are updated as well.
     """
 
-    MIN_TIME_BETWEEN_QUERIES = timedelta(seconds=10)
+    _MIN_TIME_BETWEEN_QUERIES = timedelta(seconds=5)
+
+    _time_provider = SystemTimeProvider()
 
     def __init__(self, identifier: str):
         """Initializes the instance for a submission identifier.
@@ -132,13 +135,13 @@ class Submission:
         # Avoid repeated queries to the server
         if (
             self._last_queried_at
-            and datetime.now() - self._last_queried_at
-            < Submission.MIN_TIME_BETWEEN_QUERIES
+            and Submission._time_provider.now() - self._last_queried_at
+            < self._MIN_TIME_BETWEEN_QUERIES
         ):
             return
 
         # Query the server for the latest status.
-        self._last_queried_at = datetime.now()
+        self._last_queried_at = Submission._time_provider.now()
         response = self.session.get(
             f"/submissions/{self.identifier}/progress",
             params={"from-entry-number": len(self._log_entries) + 1},
@@ -168,7 +171,8 @@ class Submission:
 
 
 def submit(
-    file: Union[Path, str, BinaryIO], proposal_code: str | None = None
+    file: Union[Path, str, BinaryIO],
+    proposal_code: str | None = None,
 ) -> Submission:
     """Submit a proposal file.
 

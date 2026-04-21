@@ -5,6 +5,7 @@ import responses
 
 from pyastrosalt import session
 from pyastrosalt.session import Session
+from pyastrosalt.util.time import FakeTimeProvider
 
 
 @pytest.fixture(autouse=True, scope="session")
@@ -38,3 +39,12 @@ def base_url() -> Generator[str, None, None]:
 @pytest.fixture(autouse=True, scope="function")
 def reset_session():
     Session._session = None
+
+
+@pytest.fixture(scope="function")
+def time_provider(monkeypatch) -> Generator[FakeTimeProvider, None, None]:
+    time_provider = FakeTimeProvider()
+    monkeypatch.setattr(
+        "pyastrosalt.submission.Submission._time_provider", time_provider
+    )
+    yield time_provider

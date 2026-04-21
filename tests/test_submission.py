@@ -7,7 +7,7 @@ from typing import Any, BinaryIO, Dict, List
 
 import pytest
 import responses
-from freezegun import freeze_time
+from pyastrosalt.util.time import FakeTimeProvider
 from responses import RequestsMock
 
 from pyastrosalt.submission import (
@@ -184,7 +184,7 @@ def _time(entry_number: int) -> datetime:
 
 @pytest.mark.parametrize("property", ["log", "status", "error"])
 def test_submission_progress_methods_make_correct_queries(
-    property: str, base_url: str, mocked_responses: RequestsMock
+    property: str, base_url: str, time_provider, mocked_responses: RequestsMock
 ):
     counter = {"value": 0}
 
@@ -232,16 +232,17 @@ def test_submission_progress_methods_make_correct_queries(
     # As the server is queried only every 10 seconds, we have to explicitly move time
     # forward to make repeated server queries.
     initial_datetime = datetime(2024, 10, 25, 10, 0, 0, 0, tzinfo=timezone.utc)
+    time_provider.time = initial_datetime
     one_minute = timedelta(minutes=1)
-    with freeze_time(initial_datetime, tz_offset=0) as freezer:
-        submission = Submission(identifier)
-        getattr(submission, property)
-        freezer.move_to(initial_datetime + one_minute)
-        getattr(submission, property)
-        freezer.move_to(initial_datetime + 2 * one_minute)
-        getattr(submission, property)
-        freezer.move_to(initial_datetime + 3 * one_minute)
-        getattr(submission, property)
+
+    submission = Submission(identifier)
+    getattr(submission, property)
+    time_provider.time = initial_datetime + one_minute
+    getattr(submission, property)
+    time_provider.time = initial_datetime + 2 * one_minute
+    getattr(submission, property)
+    time_provider.time = initial_datetime + 3 * one_minute
+    getattr(submission, property)
 
 
 @pytest.mark.parametrize(
@@ -253,6 +254,7 @@ def test_submission_progress_properties_return_correct_values(
     final_message_type: str,
     proposal_code: str | None,
     base_url: str,
+    time_provider: FakeTimeProvider,
     mocked_responses: RequestsMock,
 ):
     counter = {"value": 0}
@@ -327,43 +329,44 @@ def test_submission_progress_properties_return_correct_values(
     # As the server is queried only every 10 seconds, we have to explicitly move time
     # forward to make repeated server queries.
     initial_datetime = datetime(2024, 10, 25, 10, 0, 0, 0, tzinfo=timezone.utc)
+    time_provider.time = initial_datetime
     one_minute = timedelta(minutes=1)
-    with freeze_time(initial_datetime) as freezer:
-        # Check the submission...
-        submission = Submission(identifier)
-        assert submission.status == SubmissionStatus.IN_PROGRESS
-        assert submission.log == expected_full_log[:2]
-        assert submission.error is None
-        assert submission.proposal_code is None
 
-        # ... and check it again one minute later...
-        freezer.move_to(initial_datetime + one_minute)
-        assert submission.status == SubmissionStatus.IN_PROGRESS
-        assert submission.log == expected_full_log[:2]
-        assert submission.error is None
-        assert submission.proposal_code is None
+    # Check the submission...
+    submission = Submission(identifier)
+    assert submission.status == SubmissionStatus.IN_PROGRESS
+    assert submission.log == expected_full_log[:2]
+    assert submission.error is None
+    assert submission.proposal_code is None
 
-        # ... and check it again another minute later...
-        freezer.move_to(initial_datetime + 2 * one_minute)
-        assert submission.status == SubmissionStatus.IN_PROGRESS
-        assert submission.log == expected_full_log[:3]
-        assert submission.error is None
-        assert submission.proposal_code is None
+    # ... and check it again one minute later...
+    time_provider.time = initial_datetime + one_minute
+    assert submission.status == SubmissionStatus.IN_PROGRESS
+    assert submission.log == expected_full_log[:2]
+    assert submission.error is None
+    assert submission.proposal_code is None
 
-        # ... and check it again yet another minute later.
-        freezer.move_to(initial_datetime + 3 * one_minute)
-        assert submission.status == final_status
-        assert submission.log == expected_full_log[:5]
-        if final_status == SubmissionStatus.FAILED:
-            assert submission.error == "Message 5"
-            assert submission.proposal_code is None
-        else:
-            assert submission.error is None
-            assert submission.proposal_code == "2024-2-SCI-055"
+    # ... and check it again another minute later...
+    time_provider.time = initial_datetime + 2 * one_minute
+    assert submission.status == SubmissionStatus.IN_PROGRESS
+    assert submission.log == expected_full_log[:3]
+    assert submission.error is None
+    assert submission.proposal_code is None
+
+    # ... and check it again yet another minute later.
+    time_provider.time = initial_datetime + 3 * one_minute
+    assert submission.status == final_status
+    assert submission.log == expected_full_log[:5]
+    if final_status == SubmissionStatus.FAILED:
+        assert submission.error == "Message 5"
+        assert submission.proposal_code is None
+    else:
+        assert submission.error is None
+        assert submission.proposal_code == "2024-2-SCI-055"
 
 
 def test_submission_progress_queries_every_ten_seconds(
-    base_url: str, mocked_responses: RequestsMock
+    base_url: str, time_provider: FakeTimeProvider, mocked_responses: RequestsMock
 ):
     identifier = "abcd"
     url = f"{base_url}/submissions/{identifier}/progress"
@@ -374,27 +377,31 @@ def test_submission_progress_queries_every_ten_seconds(
     )
 
     initial_datetime = datetime(2024, 10, 25, 10, 0, 0, 0, tzinfo=timezone.utc)
+    time_provider.time = initial_datetime
+
+    # Even though you query all the status details, only one server query is made.
+    submission = Submission(identifier)
+    submission.status  # noqa (we are testing a "side effect")
+    submission.error  # noqa
+    submission.log  # noqa
+    submission.proposal_code  # noqa
+    mocked_responses.assert_call_count(full_url, 1)
+
+    # Re-query the status after a second. No server query is made.
     one_second = timedelta(seconds=1)
-    with freeze_time(initial_datetime) as freezer:
-        # Even though you query all the status details, only one server query is made.
-        submission = Submission(identifier)
-        submission.status  # noqa (we are testing a "side effect")
-        submission.error  # noqa
-        submission.log  # noqa
-        submission.proposal_code  # noqa
-        mocked_responses.assert_call_count(full_url, 1)
+    submission.status  # noqa
+    mocked_responses.assert_call_count(full_url, 1)
 
-        # Re-query the status. No server query is made.
-        submission.status  # noqa
-        mocked_responses.assert_call_count(full_url, 1)
+    # Wait for 1 second less than the minimum time between queries and query the status
+    # again. No server query is made.
+    new_time = initial_datetime + Submission._MIN_TIME_BETWEEN_QUERIES - one_second
+    time_provider.time = new_time
+    submission.status  # noqa
+    mocked_responses.assert_call_count(full_url, 1)
 
-        # Wait for 9 seconds and query the status again. No server query is made.
-        freezer.move_to(initial_datetime + 9 * one_second)
-        submission.status  # noqa
-        mocked_responses.assert_call_count(full_url, 1)
-
-        # Wait for another 2 seconds and query the status again. This time a server
-        # query is made.
-        freezer.move_to(initial_datetime + 11 * one_second)
-        submission.status  # noqa
-        mocked_responses.assert_call_count(full_url, 2)
+    # Wait for another 2 seconds and query the status again. This time a server
+    # query is made.
+    new_time += 2 * one_second
+    time_provider.time = new_time
+    submission.status  # noqa
+    mocked_responses.assert_call_count(full_url, 2)
