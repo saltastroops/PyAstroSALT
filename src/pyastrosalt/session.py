@@ -50,7 +50,7 @@ class Session:
     _requests_session: RequestsSession
     _session: "Session" = None  # type: ignore
 
-    PLAYGROUND_BASE_URL = "http://localhost:8001"
+    PLAYGROUND_BASE_URL = "https://api-playground.salt.ac.za"
     PRODUCTION_BASE_URL = "https://api.salt.ac.za"
 
     @classmethod
