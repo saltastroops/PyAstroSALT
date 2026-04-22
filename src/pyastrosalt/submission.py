@@ -4,6 +4,7 @@ import dataclasses
 from datetime import datetime, timedelta
 from enum import Enum
 from pathlib import Path
+from time import sleep
 from typing import IO, Any, BinaryIO, Union
 from zipfile import ZipFile, is_zipfile
 
@@ -173,6 +174,7 @@ class Submission:
 def submit(
     file: Union[Path, str, BinaryIO],
     proposal_code: str | None = None,
+    validation_only=False,
 ) -> Submission:
     """Submit a proposal file.
 
@@ -198,18 +200,72 @@ def submit(
     """
     if not _is_file_like(file):
         with open(file, "rb") as f:  # type:ignore
-            return _submit(f, proposal_code)
+            return _submit(f, proposal_code, validation_only)
     else:
         return _submit(file, proposal_code)  # type:ignore
 
 
-def _submit(file: IO[Any], proposal_code: str | None) -> Submission:
+def validate(
+    file: Union[Path, str, BinaryIO], proposal_code: str | None = None
+) -> tuple[bool, list[str]]:
+    """Validate a proposal file.
+
+    The validated file must be a zip file containing files in a format understood by the
+    SALT API. It has to contain an XML file with the whole proposal, blocks or a single
+    block, as well as the required attachments.
+
+    A file path or a file-like object may be passed as the file. In case of a file-like
+    object it must support the seek method.
+
+    If you validate a new proposal, the proposal code must be None. Conversely, if you
+    resubmit (contet for) an existing proposal, the proposal code must be that of the
+    proposal.
+
+    The function waits for the validation to finish. It then returns a boolean
+    indicating whether the file is valid (`True`) or invalid (`False`) as well as a list
+    of errors raised during the validation. This list is empty for valid files.
+
+    As the validated content is sent to the server, it may take a while for this
+    function to return.
+
+    Args:
+        file: The zip file containing the validated content.
+        proposal_code: The proposal code or None if this is a new proposal.
+
+    Returns:
+        A tuple of a boolean indicating whether the proposal is valid (`True`) or
+        invalid (`False`) and a list of errors raised during the validation.
+    """
+    submission = submit(file, proposal_code, True)
+
+    while submission.status == SubmissionStatus.IN_PROGRESS:
+        # Avoid overloading.
+        sleep(0.5)
+
+    if submission.status == SubmissionStatus.SUCCESS:
+        return True, []
+    else:
+        errors = [
+            l.message
+            for l in submission.log
+            if l.message_type == SubmissionMessageType.ERROR
+        ]
+        return False, errors
+
+
+def _submit(
+    file: IO[Any], proposal_code: str | None, validation_only: bool = False
+) -> Submission:
     # Do some sanity checks on the submitted content.
     _check_submitted_content(file, proposal_code)
 
     # Submit the file.
     session = Session.get_instance()
-    data = {"proposal_code": proposal_code} if proposal_code is not None else {}
+    data = {}
+    if proposal_code:
+        data["proposal_code"] = proposal_code
+    if validation_only:
+        data["validation_only"] = "validation-only"
     response = session.post(
         "/submissions/",
         data=data,

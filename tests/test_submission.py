@@ -16,6 +16,7 @@ from pyastrosalt.submission import (
     SubmissionMessageType,
     SubmissionStatus,
     submit,
+    validate,
 )
 
 _PROPOSAL_FILE = pathlib.Path(__file__).parent / "data" / "proposal"
@@ -405,3 +406,98 @@ def test_submission_progress_queries_every_ten_seconds(
     time_provider.time = new_time
     submission.status  # noqa
     mocked_responses.assert_call_count(full_url, 2)
+
+
+@pytest.mark.parametrize(
+    "final_status, expected_valid, expected_errors",
+    [
+        ("Successful", True, []),
+        ("Failed", False, ["Message 7"]),
+    ],
+)
+def test_validate(
+    final_status: str,
+    expected_valid: bool,
+    expected_errors: list[str],
+    base_url: str,
+    time_provider: FakeTimeProvider,
+    mocked_responses: RequestsMock,
+    monkeypatch,
+):
+    file_content = f"""<?xml version="1.0" encoding="UTF-8" ?>
+
+    <Blocks/>
+    """
+    proposal_file = _create_zip([{"filename": f"Blocks.xml", "content": file_content}])
+    proposal_code = "2024-2-SCI-042"
+
+    counter = {"value": 0}
+
+    def request_callback(request):
+        counter["value"] += 1
+        if counter["value"] == 1:
+            response = _create_progress_response(
+                "In progress", [1, 2], ["Info", "Warning"], None
+            )
+        elif counter["value"] == 2:
+            response = _create_progress_response("In progress", [], [], None)
+        elif counter["value"] == 3:
+            response = _create_progress_response(
+                "In progress", [3, 4, 5, 6], ["Info", "Info", "Info", "Info"], None
+            )
+        elif counter["value"] == 4:
+            response = _create_progress_response(
+                final_status, [7], ["Error"], "2024-2-SCI-055"
+            )
+        else:
+            # As time will be moved rapidly, there is bound to be a query even after the
+            # final status has been returned.
+            response = _create_progress_response(final_status, [], [], "2024-2-SCI-055")
+        return 200, {}, json.dumps(response)
+
+    identifier = "abcd"
+    mocked_responses.post(
+        url=f"{base_url}/submissions/", json={"submission_identifier": identifier}
+    )
+    mocked_responses.add_callback(
+        "GET",
+        f"{base_url}/submissions/{identifier}/progress",
+        match=[responses.matchers.query_string_matcher("from-entry-number=1")],
+        callback=request_callback,
+        content_type="application/json",
+    )
+    mocked_responses.add_callback(
+        "GET",
+        f"{base_url}/submissions/{identifier}/progress",
+        match=[responses.matchers.query_string_matcher("from-entry-number=3")],
+        callback=request_callback,
+        content_type="application/json",
+    )
+    mocked_responses.add_callback(
+        "GET",
+        f"{base_url}/submissions/{identifier}/progress",
+        match=[responses.matchers.query_string_matcher("from-entry-number=7")],
+        callback=request_callback,
+        content_type="application/json",
+    )
+    # As time will be moved rapidly, there is bound to be a query even after the final
+    # status has been returned.
+    mocked_responses.add_callback(
+        "GET",
+        f"{base_url}/submissions/{identifier}/progress",
+        match=[responses.matchers.query_string_matcher("from-entry-number=8")],
+        callback=request_callback,
+        content_type="application/json",
+    )
+
+    # As the server is queried only every 5 seconds, we have to explicitly move time
+    # forward to make repeated server queries.
+    initial_datetime = datetime(2024, 10, 25, 10, 0, 0, 0, tzinfo=timezone.utc)
+    one_minute = timedelta(minutes=1)
+    time_provider.time = initial_datetime
+    time_provider.tick = one_minute
+    monkeypatch.setattr("pyastrosalt.submission.sleep", lambda t: t)
+    valid, errors = validate(proposal_file, proposal_code)
+
+    assert valid == expected_valid
+    assert errors == expected_errors
