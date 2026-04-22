@@ -3,14 +3,14 @@ from typing import Generator
 import pytest
 import responses
 
-from pyastrosalt import session
 from pyastrosalt.session import Session
 from pyastrosalt.util.time import FakeTimeProvider
 
 
 @pytest.fixture(autouse=True, scope="session")
 def set_base_url():
-    session.DEFAULT_BASE_URL = "https://example.org/"
+    Session.PLAYGROUND_BASE_URL = "https://playground.example.org"
+    Session.PRODUCTION_BASE_URL = "https://example.org"
 
 
 @pytest.fixture(autouse=True)
