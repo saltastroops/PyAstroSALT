@@ -7,6 +7,8 @@ from typing import Any, BinaryIO, Dict, List
 
 import pytest
 import responses
+
+from pyastrosalt.session import Session
 from pyastrosalt.util.time import FakeTimeProvider
 from responses import RequestsMock
 
@@ -40,6 +42,7 @@ def test_submission(
     base_url: str,
     mocked_responses: RequestsMock,
 ):
+    session = Session()
     proposal_content = _PROPOSAL_FILE.read_bytes()
     proposal_code = "2024-2-SCI-042"
     req_data = {"proposal_code": proposal_code}
@@ -51,7 +54,7 @@ def test_submission(
             responses.matchers.multipart_matcher(files=req_files, data=req_data),
         ],
     )
-    submit(proposal, proposal_code=proposal_code)
+    submit(session, proposal, proposal_code=proposal_code)
 
 
 def test_submission_without_proposal_code(
@@ -66,7 +69,8 @@ def test_submission_without_proposal_code(
             responses.matchers.multipart_matcher(files=req_files, data={}),
         ],
     )
-    submit(_PROPOSAL_FILE)
+    session = Session()
+    submit(session, _PROPOSAL_FILE)
 
 
 @pytest.mark.parametrize("content", ["Proposal", "Blocks", "Block"])
@@ -77,6 +81,7 @@ def test_submission_accepts_proposal_blocks_and_block(
 
 <{content}/>
 """
+    session = Session()
     proposal_file = _create_zip(
         [{"filename": f"{content}.xml", "content": file_content}]
     )
@@ -90,19 +95,21 @@ def test_submission_accepts_proposal_blocks_and_block(
             responses.matchers.multipart_matcher(files=req_files, data=req_data),
         ],
     )
-    submit(proposal_file, proposal_code=proposal_code)
+    submit(session, proposal_file, proposal_code=proposal_code)
 
 
 def test_submission_requires_zip_file():
+    session = Session()
     content = BytesIO(b"PKNot a zip file")
     with pytest.raises(ValueError, match="zip"):
-        submit(content)
+        submit(session, content)
 
 
 def test_submission_requires_proposal_or_block_xml():
+    session = Session()
     file = _create_zip([{"filename": "OtherContent.txt", "content": "other content"}])
     with pytest.raises(ValueError, match="Proposal.xml, Blocks.xml or Block.xml"):
-        submit(file)
+        submit(session, file)
 
 
 def test_submission_requires_exactly_one_proposal_or_block_xml():
@@ -112,17 +119,19 @@ def test_submission_requires_exactly_one_proposal_or_block_xml():
             {"filename": "Blocks.xml", "content": "<Blocks/>"},
         ]
     )
+    session = Session()
     with pytest.raises(
         ValueError, match="exactly one of Proposal.xml, Blocks.xml or Block.xml"
     ):
-        submit(file)
+        submit(session, file)
 
 
 @pytest.mark.parametrize("content", ["Blocks", "Block"])
 def test_submission_of_blocks_requires_proposal_code(content: str):
+    session = Session()
     file = _create_zip([{"filename": f"{content}.xml", "content": f"<{content}/>"}])
     with pytest.raises(ValueError, match="proposal code is required"):
-        submit(file)
+        submit(session, file)
 
 
 def test_submission_accepts_a_consistent_proposal_code(
@@ -133,12 +142,13 @@ def test_submission_accepts_a_consistent_proposal_code(
 
 <Proposal xmlns="http://www.salt.ac.za/PIPT/Proposal/Phase2" code="2024-2-SCI-042"/>
 """
+    session = Session()
     file = _create_zip([{"filename": "Proposal.xml", "content": content}])
     mocked_responses.post(
         f"{base_url}/submissions/", json={"submission_identifier": "abcd"}
     )
 
-    submit(file, proposal_code=proposal_code)
+    submit(session, file, proposal_code=proposal_code)
 
 
 def test_submission_requires_a_consistent_proposal_code():
@@ -154,8 +164,9 @@ def test_submission_requires_a_consistent_proposal_code():
         f"match the proposal code in the submitted Proposal.xml file \\("
         f"{proposal_code}\\)."
     )
+    session = Session()
     with pytest.raises(ValueError, match=message):
-        submit(file, proposal_code=proposal_code_argument)
+        submit(session, file, proposal_code=proposal_code_argument)
 
 
 def _create_progress_response(
@@ -207,6 +218,7 @@ def test_submission_progress_methods_make_correct_queries(
             )
         return 200, {}, json.dumps(response)
 
+    session = Session()
     identifier = "abcd"
     mocked_responses.add_callback(
         "GET",
@@ -236,7 +248,7 @@ def test_submission_progress_methods_make_correct_queries(
     time_provider.time = initial_datetime
     one_minute = timedelta(minutes=1)
 
-    submission = Submission(identifier)
+    submission = Submission(session, identifier)
     getattr(submission, property)
     time_provider.time = initial_datetime + one_minute
     getattr(submission, property)
@@ -276,6 +288,7 @@ def test_submission_progress_properties_return_correct_values(
             )
         return 200, {}, json.dumps(response)
 
+    session = Session()
     identifier = "abcd"
     mocked_responses.add_callback(
         "GET",
@@ -334,7 +347,7 @@ def test_submission_progress_properties_return_correct_values(
     one_minute = timedelta(minutes=1)
 
     # Check the submission...
-    submission = Submission(identifier)
+    submission = Submission(session, identifier)
     assert submission.status == SubmissionStatus.IN_PROGRESS
     assert submission.log == expected_full_log[:2]
     assert submission.error is None
@@ -369,6 +382,7 @@ def test_submission_progress_properties_return_correct_values(
 def test_submission_progress_queries_every_ten_seconds(
     base_url: str, time_provider: FakeTimeProvider, mocked_responses: RequestsMock
 ):
+    session = Session()
     identifier = "abcd"
     url = f"{base_url}/submissions/{identifier}/progress"
     full_url = f"{url}?from-entry-number=1"
@@ -381,7 +395,7 @@ def test_submission_progress_queries_every_ten_seconds(
     time_provider.time = initial_datetime
 
     # Even though you query all the status details, only one server query is made.
-    submission = Submission(identifier)
+    submission = Submission(session, identifier)
     submission.status  # noqa (we are testing a "side effect")
     submission.error  # noqa
     submission.log  # noqa
@@ -455,6 +469,7 @@ def test_validate(
             response = _create_progress_response(final_status, [], [], "2024-2-SCI-055")
         return 200, {}, json.dumps(response)
 
+    session = Session()
     identifier = "abcd"
     mocked_responses.post(
         url=f"{base_url}/submissions/", json={"submission_identifier": identifier}
@@ -497,7 +512,7 @@ def test_validate(
     time_provider.time = initial_datetime
     time_provider.tick = one_minute
     monkeypatch.setattr("pyastrosalt.submission.sleep", lambda t: t)
-    valid, errors = validate(proposal_file, proposal_code)
+    valid, errors = validate(session, proposal_file, proposal_code)
 
     assert valid == expected_valid
     assert errors == expected_errors

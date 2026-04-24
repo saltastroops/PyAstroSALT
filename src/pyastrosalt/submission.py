@@ -88,14 +88,14 @@ class Submission:
 
     _time_provider: TimeProvider = SystemTimeProvider()
 
-    def __init__(self, identifier: str):
+    def __init__(self, session: Session, identifier: str):
         """Initializes the instance for a submission identifier.
 
         Args:
             identifier: A submission identifier.
         """
         self.identifier = identifier
-        self.session = Session.get_instance()
+        self._session = session
         self._log_entries: list[SubmissionLogEntry] = []
         self._status = SubmissionStatus.IN_PROGRESS
         self._error: str | None = None
@@ -144,7 +144,7 @@ class Submission:
 
         # Query the server for the latest status.
         self._last_queried_at = Submission._time_provider.now()
-        response = self.session.get(
+        response = self._session.get(
             f"/submissions/{self.identifier}/progress",
             params={"from-entry-number": len(self._log_entries) + 1},
         ).json()
@@ -173,6 +173,7 @@ class Submission:
 
 
 def submit(
+    session: Session,
     file: Union[Path, str, BinaryIO],
     proposal_code: str | None = None,
     validation_only=False,
@@ -193,6 +194,7 @@ def submit(
     progress.
 
     Args:
+        session: The session to use.
         file: The zip file containing the submitted content.
         proposal_code: The proposal code or None if this is a new submission.
 
@@ -201,13 +203,13 @@ def submit(
     """
     if not _is_file_like(file):
         with open(file, "rb") as f:  # type:ignore
-            return _submit(f, proposal_code, validation_only)
+            return _submit(session, f, proposal_code, validation_only)
     else:
-        return _submit(file, proposal_code)  # type:ignore
+        return _submit(session, file, proposal_code)  # type:ignore
 
 
 def validate(
-    file: Union[Path, str, BinaryIO], proposal_code: str | None = None
+    session: Session, file: Union[Path, str, BinaryIO], proposal_code: str | None = None
 ) -> tuple[bool, list[str]]:
     """Validate a proposal file.
 
@@ -230,6 +232,7 @@ def validate(
     function to return.
 
     Args:
+        session: Thecsession to use.
         file: The zip file containing the validated content.
         proposal_code: The proposal code or None if this is a new proposal.
 
@@ -237,7 +240,7 @@ def validate(
         A tuple of a boolean indicating whether the proposal is valid (`True`) or
         invalid (`False`) and a list of errors raised during the validation.
     """
-    submission = submit(file, proposal_code, True)
+    submission = submit(session, file, proposal_code, True)
 
     while submission.status == SubmissionStatus.IN_PROGRESS:
         # Avoid overloading.
@@ -255,13 +258,15 @@ def validate(
 
 
 def _submit(
-    file: IO[Any], proposal_code: str | None, validation_only: bool = False
+    session: Session,
+    file: IO[Any],
+    proposal_code: str | None,
+    validation_only: bool = False,
 ) -> Submission:
     # Do some sanity checks on the submitted content.
     _check_submitted_content(file, proposal_code)
 
     # Submit the file.
-    session = Session.get_instance()
     data = {}
     if proposal_code:
         data["proposal_code"] = proposal_code
@@ -272,7 +277,7 @@ def _submit(
         data=data,
         files={"proposal": file},
     )
-    return Submission(response.json()["submission_identifier"])
+    return Submission(session, response.json()["submission_identifier"])
 
 
 def _check_submitted_content(file: IO[Any], proposal_code: str | None) -> None:

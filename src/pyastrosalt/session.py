@@ -48,19 +48,14 @@ class Session:
 
     _base_url: str  # type: ignore
     _requests_session: RequestsSession
-    _session: "Session" = None  # type: ignore
 
     PLAYGROUND_BASE_URL = "https://api-playground.salt.ac.za"
     PRODUCTION_BASE_URL = "https://api.salt.ac.za"
 
-    @classmethod
-    def get_instance(cls) -> "Session":
+    def __init__(self):
         """Return the session for making HTTP requests to the SALT API."""
-        if not cls._session:
-            cls._session = cls()
-            cls._session._base_url = Session.PRODUCTION_BASE_URL.rstrip("/")
-            cls._session._requests_session = RequestsSession()
-        return cls._session
+        self._base_url = Session.PRODUCTION_BASE_URL.rstrip("/")
+        self._requests_session = RequestsSession()
 
     def use_playground(self):
         """Use the playground server.
