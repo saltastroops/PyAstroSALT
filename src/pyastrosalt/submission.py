@@ -5,13 +5,14 @@ from datetime import datetime, timedelta
 from enum import Enum
 from pathlib import Path
 from time import sleep
-from typing import IO, Any, BinaryIO, Union
+from typing import IO, Any, BinaryIO, Union, cast
+from xml.etree.ElementTree import Element
 from zipfile import ZipFile, is_zipfile
 
 import defusedxml.ElementTree as ET
 
 from pyastrosalt.session import Session
-from pyastrosalt.util.time import SystemTimeProvider
+from pyastrosalt.util.time import SystemTimeProvider, TimeProvider
 
 
 class SubmissionStatus(str, Enum):
@@ -308,7 +309,7 @@ def _check_submitted_content(file: IO[Any], proposal_code: str | None) -> None:
         if filename == "Proposal.xml":
             with z.open("Proposal.xml", "r") as p:
                 tree = ET.parse(p)
-                code = tree.getroot().attrib.get("code")
+                code = cast(Element, tree.getroot()).attrib.get("code")
                 if (
                     code
                     and not code.startswith("Unsubmitted")
