@@ -85,7 +85,7 @@ class Submission:
 
     _MIN_TIME_BETWEEN_QUERIES = timedelta(seconds=5)
 
-    _time_provider = SystemTimeProvider()
+    _time_provider: TimeProvider = SystemTimeProvider()
 
     def __init__(self, identifier: str):
         """Initializes the instance for a submission identifier.
