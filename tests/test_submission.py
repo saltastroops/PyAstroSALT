@@ -44,8 +44,7 @@ def test_submission(
 ):
     session = Session()
     proposal_content = _PROPOSAL_FILE.read_bytes()
-    proposal_code = "2024-2-SCI-042"
-    req_data = {"proposal_code": proposal_code}
+    req_data = {}
     req_files = {"proposal": proposal_content}
     mocked_responses.post(
         f"{base_url}/submissions/",
@@ -54,7 +53,7 @@ def test_submission(
             responses.matchers.multipart_matcher(files=req_files, data=req_data),
         ],
     )
-    submit(session, proposal, proposal_code=proposal_code)
+    submit(session, proposal)
 
 
 def test_submission_without_proposal_code(
@@ -77,15 +76,15 @@ def test_submission_without_proposal_code(
 def test_submission_accepts_proposal_blocks_and_block(
     content: str, base_url: str, mocked_responses: RequestsMock
 ):
+    proposal_code = "2024-2-SCI-042"
     file_content = f"""<?xml version="1.0" encoding="UTF-8" ?>
 
-<{content}/>
+<{content}{f' code="{proposal_code}"'}/>
 """
     session = Session()
     proposal_file = _create_zip(
         [{"filename": f"{content}.xml", "content": file_content}]
     )
-    proposal_code = "2024-2-SCI-042"
     req_data = {"proposal_code": proposal_code}
     req_files = {"proposal": proposal_file}
     mocked_responses.post(
