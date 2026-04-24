@@ -1,5 +1,3 @@
-from pyastrosalt.session import Sessionfrom pyastrosalt import session
-
 # pyastrosalt
 
 PyAstroSALT is a wrapper around the RESTful API for observations with the [South African Astronomical Observatory (SALT)](https://www.salt.ac.za/).
