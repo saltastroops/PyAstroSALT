@@ -140,10 +140,9 @@ def test_submission_of_blocks_requires_proposal_code(content: str):
 def test_submission_accepts_a_consistent_proposal_code(
     proposal_code, proposal_code_argument, base_url: str, mocked_responses: RequestsMock
 ):
-    proposal_code = "2024-2-SCI-042"
-    content = """<?xml version="1.0" encoding="UTF-8" ?>
+    content = f"""<?xml version="1.0" encoding="UTF-8" ?>
 
-<Proposal xmlns="http://www.salt.ac.za/PIPT/Proposal/Phase2" code="2024-2-SCI-042"/>
+<Proposal xmlns="http://www.salt.ac.za/PIPT/Proposal/Phase2" code="{proposal_code}"/>
 """
     session = Session()
     file = _create_zip([{"filename": "Proposal.xml", "content": content}])
@@ -151,7 +150,7 @@ def test_submission_accepts_a_consistent_proposal_code(
         f"{base_url}/submissions/", json={"submission_identifier": "abcd"}
     )
 
-    submit(session, file, proposal_code=proposal_code)
+    submit(session, file, proposal_code=proposal_code_argument)
 
 
 @pytest.mark.parametrize(
