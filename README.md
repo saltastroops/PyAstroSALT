@@ -1,64 +1,121 @@
+from pyastrosalt.session import Sessionfrom pyastrosalt import session
+
 # pyastrosalt
 
+PyAstroSALT is a wrapper around the RESTful API for observations with the [South African Astronomical Observatory (SALT)](https://www.salt.ac.za/).
+
+It can be used for
+
+* validating proposals
+* submitting proposals
+* making any API request
+
 ## Installation
+
+PyAstroSALT can be installed from PyPI:
 
 ```console
 pip install pyastrosalt
 ```
 
-## Development and deployment
+## Validating a proposal
 
-[uv](https://docs.astral.sh/uv/) is used as the package manager for this project. There are several ways to install uv; see the official [installation instructions]((https://docs.astral.sh/uv/getting-started/installation/).
+SALT proposals are stored as zip files. If you want to see what such a zip file looks like, you can create a proposal in the [Principal Investigator Proposal Tool (PIPT)](https://astronomers.salt.ac.za/software/pipt/) and export it using the menu item `File | Export as Zip File`.
 
-### Managing dependencies
+The following assumes that you have a proposal `proposal.zip` in the working directory and that the proposal code is 2026-1-SCI-042.
 
- Use uv's `add` command for adding dependencies. For example:
+You start by creating a session and authenticating with your SALT user credentials. For testing, you can use the playground instead of the production server:
 
-```bash
-uv add numpy
+```python
+from getpass import getpass
+from pyastrosalt.session import Session
+
+username = input("Your SALT username: ")
+password = getpass("Your SALT password: ")
+session = Session()
+session.use_playground()
+session.login(username=username, password=password)
 ```
 
-To add an optional dependency, use the `--optional` option. For example, if you want to add `pyjwt` to the optional group `secure`:
+You can now validate the proposal:
 
-```bash
-uv add --optional secure pyjwt
+```python
+from pyastrosalt.submission import validate
+
+valid, errors = validate(session, "proposal.zip", "2026-1-SCI-042")
+if valid:
+    print("The proposal is valid.")
+else:
+    print("Validation failed with the following error(s):")
+    for error in errors:
+        print(f"- {error}")
 ```
 
-Optional groups are listed in the `project.optional-dependencies` section of `pyproject.toml`.
+## Submitting a proposal
 
-In case the dependency is required for development purposes only, you should use the `--dev` option. For example, the following will add pytest to the development only group:
+As in the previous section, the following example assumes that you have a proposal `proposal.zip` in the working directory and that the proposal code is 2026-1-SCI-042.
 
-```bash
-uv add --dev pytest
+If you want to submit the proposal, you start by creating a session and authenticating. For testing, you can use the playground instead of the production server:
+
+```python
+from getpass import getpass
+from time import sleep
+
+from pyastrosalt.session import Session
+
+username = input("Your SALT username: ")
+password = getpass("Your SALT password: ")
+session = Session()
+session.use_playground()
+session.login(username=username, password=password)
 ```
 
-Development only dependency groups are listed in the `dependency-groups` section of `pyproject.toml`. They `re not included in the published package.
+You can now call the `submit` function. This function returns a `Submission` instance, which yiu can poll for the submission status, proposal code and (if applicable) submission error:
 
-### Documentation
+```python
+from time import sleep
+from pyastrosalt.submission import submit, SubmissionStatus
 
-The documentation is generated using [Materials for MkDocs](https://squidfunk.github.io/mkdocs-material/) and [mkdocstrings](https://mkdocstrings.github.io), and all its files are located in the `/docs` folder. You can view
-the generated files by running
-
-```bash
-mkdocs serve
+submission = submit(
+    session, "proposal.zip", "2026-1-SCI-042"
+)
+while submission.status == SubmissionStatus.IN_PROGRESS:
+    print("Waiting for submission to finish...")
+    sleep(10)
+    
+if submission.status == SubmissionStatus.SUCCESS:
+    print(f"Success! The proposal code is {submission.proposal_code}.")
+else:
+    print(f"The validation failed with the following error:\n{submission.error}")
 ```
 
-There also is a pdm script for building the documentation files.
+## Using the SALT API
 
-Script | Description
---- | ---
-`docs` | Build the documentation
+To make a request to the SALT API, you can create a session, authenticate and issue an HTTP request. Refer to the [Requests documentation](https://requests.readthedocs.io/en/latest/) for details on the available request methods (`get`, `post`, `put`, `patch`, `delete` and `request`).
 
-However, contrary to `mkdocs serve`, this command does not let you preview the documentation as you write. It is mostly intended for testing purposes.
+The following example shows how you can get details about your SALT propoals:
 
-### Deployment
+```python
+from getpass import getpass
 
-There is a GitHub workflow (`publish.xml`) for deploying the package to a package repository (such as PyPI). This workflow assumes that the GitHub repository is a trusted publisher. Refer to the PyPI documentation on how to [create a PyPI project with a trusted publisher](https://docs.pypi.org/trusted-publishers/creating-a-project-through-oidc/).
+from pyastrosalt.session import Session
 
-in addition, the workflow generates the documentation files and publishes them as a GitHub page (at [https://saltastroops.github.io/PyAstroSALT](https://saltastroops.gitub.io/PyAstroSALT)).
+# Get a session and authenticate
+username = input("Your SALT username: ")
+password = getpass("Your SALT password: ")
+session = Session()
+session.use_playground()
+session.login(username=username, password=password)
 
-To see the deployed documentation, you might have to tweak some settings. Click on Settings in the top menu and then on Page in the sidebar menu. Choose to deploy from a branch, select gh-pages as the branch and / (root) as the folder, and click on the Save button.
+# Make the API request
+response = session.get("/proposals/")
+if not response.ok:
+    raise Exception("The API request failed.")
 
-![Settings for the GitHub pages](pages_settings.png)
+# Use the response from the API
+proposals = response.json()
+for proposal in proposals:
+    print(f"{proposal['proposal_code']}: {proposal['title']}")
+```
 
-The workflow is triggered whenever a release is created for the GitHub repository. The tag for the release must be the package's version number preceded by a "v". For example, if the package version is `"1.4.2"`, the tag must be `"v1.4.2"`. The tag must be for the current commit in the main branch.
+You can find the available API endpoints on the [SALT API documentation page](https://api-playground.salt.ac.za/docs).
