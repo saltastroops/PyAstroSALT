@@ -7,11 +7,9 @@ from typing import Any, BinaryIO, Dict, List
 
 import pytest
 import responses
-
-from pyastrosalt.session import Session
-from pyastrosalt.util.time import FakeTimeProvider
 from responses import RequestsMock
 
+from pyastrosalt.session import Session
 from pyastrosalt.submission import (
     Submission,
     SubmissionLogEntry,
@@ -20,6 +18,7 @@ from pyastrosalt.submission import (
     submit,
     validate,
 )
+from pyastrosalt.util.time import FakeTimeProvider
 
 _PROPOSAL_FILE = pathlib.Path(__file__).parent / "data" / "proposal"
 

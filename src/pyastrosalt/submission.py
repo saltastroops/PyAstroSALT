@@ -92,6 +92,7 @@ class Submission:
         """Initializes the instance for a submission identifier.
 
         Args:
+            session: The session to use.
             identifier: A submission identifier.
         """
         self.identifier = identifier
@@ -197,6 +198,8 @@ def submit(
         session: The session to use.
         file: The zip file containing the submitted content.
         proposal_code: The proposal code or None if this is a new submission.
+        validation_only: Whether to validate the proposal only, without actually
+                         submitting it.
 
     Returns:
         A Submission object for tracking the submission progress.
