@@ -134,8 +134,12 @@ def test_submission_of_blocks_requires_proposal_code(content: str):
         submit(session, file)
 
 
+@pytest.mark.parametrize(
+    "proposal_code, proposal_code_argument",
+    [("2024-2-SCI-042", "2024-2-SCI-042"), ("Unsubmitted-001", None)],
+)
 def test_submission_accepts_a_consistent_proposal_code(
-    base_url: str, mocked_responses: RequestsMock
+    proposal_code, proposal_code_argument, base_url: str, mocked_responses: RequestsMock
 ):
     proposal_code = "2024-2-SCI-042"
     content = """<?xml version="1.0" encoding="UTF-8" ?>
@@ -151,9 +155,17 @@ def test_submission_accepts_a_consistent_proposal_code(
     submit(session, file, proposal_code=proposal_code)
 
 
-def test_submission_requires_a_consistent_proposal_code():
-    proposal_code = "2024-2-SCI-042"
-    proposal_code_argument = "2024-2-SCI-043"
+@pytest.mark.parametrize(
+    "proposal_code, proposal_code_argument",
+    [
+        ("2024-2-SCI-042", "2024-2-SCI-043"),
+        ("2024-2-SCI-043", None),
+        ("Unsubmitted-001", ""),
+    ],
+)
+def test_submission_requires_a_consistent_proposal_code(
+    proposal_code, proposal_code_argument
+):
     content = f"""<?xml version="1.0" encoding="UTF-8" ?>
 
 <Proposal xmlns="http://www.salt.ac.za/PIPT/Proposal/Phase2" code="{proposal_code}"/>
