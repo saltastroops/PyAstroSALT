@@ -208,7 +208,7 @@ def submit(
         with open(file, "rb") as f:  # type:ignore
             return _submit(session, f, proposal_code, validation_only)
     else:
-        return _submit(session, file, proposal_code)  # type:ignore
+        return _submit(session, file, proposal_code, validation_only)  # type:ignore
 
 
 def validate(
