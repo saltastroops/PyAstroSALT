@@ -28,8 +28,6 @@ from pyastrosalt.exceptions import (
     ServerError,
 )
 
-DEFAULT_BASE_URL = "https://api.salt.ac.za"
-
 
 class Session:
     """The session for handling HTTP requests to the SALT API server.
@@ -50,16 +48,30 @@ class Session:
 
     _base_url: str  # type: ignore
     _requests_session: RequestsSession
-    _session: "Session" = None  # type: ignore
 
-    @classmethod
-    def get_instance(cls) -> "Session":
+    PLAYGROUND_BASE_URL = "https://api-playground.salt.saao.ac.za"
+    PRODUCTION_BASE_URL = "https://api.salt.ac.za"
+
+    def __init__(self):
         """Return the session for making HTTP requests to the SALT API."""
-        if not cls._session:
-            cls._session = cls()
-            cls._session._base_url = DEFAULT_BASE_URL.rstrip("/")
-            cls._session._requests_session = RequestsSession()
-        return cls._session
+        self._base_url = Session.PRODUCTION_BASE_URL.rstrip("/")
+        self._requests_session = RequestsSession()
+
+    def use_playground(self):
+        """Use the playground server.
+
+        Calling `use_playground` is the same as setting the base URL to the playground
+        URL.
+        """
+        self.base_url = Session.PLAYGROUND_BASE_URL
+
+    def use_production_server(self):
+        """Use the production server.
+
+        Calling `use_production_server` is the same as setting the base URL to the
+        production server URL.
+        """
+        self.base_url = Session.PRODUCTION_BASE_URL
 
     @property
     def base_url(self) -> str:

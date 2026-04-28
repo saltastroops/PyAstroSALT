@@ -19,14 +19,6 @@ from pyastrosalt.session import Session
 HTTP_METHODS = ("get", "post", "put", "patch", "delete")
 
 
-def test_session_is_a_singleton() -> None:
-    instance_1 = Session.get_instance()
-    instance_2 = Session.get_instance()
-
-    assert instance_1 is not None
-    assert instance_1 is instance_2
-
-
 def test_request_makes_the_correct_request(
     base_url: str, requests_mock: Mocker
 ) -> None:
@@ -37,7 +29,7 @@ def test_request_makes_the_correct_request(
     passed_kwargs = {"data": data, "json": _json, "headers": headers, "params": params}
     with mock.patch("pyastrosalt.session.RequestsSession"):
         # The session must only be instantiated after the requests session is patched
-        session = Session.get_instance()
+        session = Session()
         try:
             session.request("GET", "/status", **passed_kwargs)
         except Exception:
@@ -59,7 +51,7 @@ def test_http_method_makes_the_correct_request(http_method: str, base_url: str) 
     passed_kwargs = {"data": data, "json": _json, "headers": headers, "params": params}
     with mock.patch("pyastrosalt.session.RequestsSession"):
         # The session must only be instantiated after the requests session is patched
-        session = Session.get_instance()
+        session = Session()
         try:
             getattr(session, http_method)("/status", **passed_kwargs)
         except Exception:
@@ -78,7 +70,7 @@ def test_http_method_makes_the_correct_request(http_method: str, base_url: str) 
 )
 def test_request_rejects_full_urls(url: str) -> None:
     with pytest.raises(ValueError, match="base URL"):
-        session = Session.get_instance()
+        session = Session()
         session.request("GET", url)
     assert True
 
@@ -89,7 +81,7 @@ def test_request_rejects_full_urls(url: str) -> None:
 )
 def test_http_method_rejects_full_urls(http_method: str, url: str) -> None:
     with pytest.raises(ValueError, match="base URL"):
-        session = Session.get_instance()
+        session = Session()
         getattr(session, http_method)(url)
     assert True
 
@@ -97,7 +89,7 @@ def test_http_method_rejects_full_urls(http_method: str, url: str) -> None:
 @pytest.mark.parametrize("endpoint", ("status", "//status"))
 def test_request_requires_single_leading_slash_for_endpoint(endpoint: str) -> None:
     with pytest.raises(ValueError, match="must start with a single slash"):
-        session = Session.get_instance()
+        session = Session()
         session.request("GET", endpoint)
     assert True
 
@@ -109,13 +101,13 @@ def test_http_method_requires_single_leading_slash_for_endpoint(
     http_method: str, endpoint: str
 ) -> None:
     with pytest.raises(ValueError, match="must start with a single slash"):
-        session = Session.get_instance()
+        session = Session()
         getattr(session, http_method)(endpoint)
     assert True
 
 
 def test_request_uses_set_base_url(requests_mock: Mocker) -> None:
-    session = Session.get_instance()
+    session = Session()
     current_url = session.base_url
     session.base_url = "https://new.base.url"
     requests_mock.post("https://new.base.url/status")
@@ -126,7 +118,7 @@ def test_request_uses_set_base_url(requests_mock: Mocker) -> None:
 
 @pytest.mark.parametrize("http_method", HTTP_METHODS)
 def test_http_method_uses_set_base_url(http_method: str, requests_mock: Mocker) -> None:
-    session = Session.get_instance()
+    session = Session()
     current_url = session.base_url
     session.base_url = "https://new.base.url"
     getattr(requests_mock, http_method)("https://new.base.url/status")
@@ -136,7 +128,7 @@ def test_http_method_uses_set_base_url(http_method: str, requests_mock: Mocker) 
 
 
 def test_trailing_slashes_are_forbidden_for_the_base_url():
-    session = Session.get_instance()
+    session = Session()
     with pytest.raises(ValueError, match="trailing slash"):
         session.base_url = "https://slashes.example.org/"
     assert True
@@ -167,7 +159,7 @@ def test_request_raises_api_exceptions(
         text=json.dumps(response_payload),
     )
     with pytest.raises(exception_class, match=message):
-        session = Session.get_instance()
+        session = Session()
         session.request("GET", "/status")
 
 
@@ -197,7 +189,7 @@ def test_http_method_raises_api_exceptions(
         text=json.dumps(response_payload),
     )
     with pytest.raises(exception_class, match=message):
-        session = Session.get_instance()
+        session = Session()
         getattr(session, http_method)("/status")
 
 
@@ -209,7 +201,7 @@ def test_request_handles_errors_without_message(
         "https://example.org/status", status_code=400, text=response_payload
     )
     with pytest.raises(BadRequestError, match="API request error."):
-        session = Session.get_instance()
+        session = Session()
         session.request("GET", "/status")
 
 
@@ -223,7 +215,7 @@ def test_http_method_handles_errors_without_message(
         f"{base_url}/status", status_code=400, text=response_payload
     )
     with pytest.raises(BadRequestError, match="API request error."):
-        session = Session.get_instance()
+        session = Session()
         getattr(session, http_method)("/status")
 
 
@@ -253,7 +245,7 @@ def test_logging_in(base_url: str, requests_mock: Mocker) -> None:
     )
 
     # You aren't logged in.
-    session = Session.get_instance()
+    session = Session()
     assert not session.logged_in
 
     # Log in.
@@ -277,7 +269,7 @@ def test_login_raises_api_error_for_invalid_server_response(
     requests_mock.post(f"{base_url}/token", text=json.dumps(token_payload))
 
     with pytest.raises(APIError, match="parsed"):
-        session = Session.get_instance()
+        session = Session()
         session.login(username, password)
 
 
@@ -298,7 +290,7 @@ def test_request_after_logging_out(base_url: str, requests_mock: Mocker) -> None
     )
 
     # Log in, log out again and make a request.
-    session = Session.get_instance()
+    session = Session()
     session.login(username, password)
     session.logout()
     session.get("/proposals")
@@ -308,6 +300,6 @@ def test_request_after_logging_out(base_url: str, requests_mock: Mocker) -> None
 
 
 def test_logout_may_be_called_if_not_logged_in():
-    session = Session.get_instance()
+    session = Session()
     session.logout()
     assert True

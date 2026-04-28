@@ -4,12 +4,15 @@ import dataclasses
 from datetime import datetime, timedelta
 from enum import Enum
 from pathlib import Path
-from typing import IO, Any, BinaryIO, Union
+from time import sleep
+from typing import IO, Any, BinaryIO, Union, cast
+from xml.etree.ElementTree import Element
 from zipfile import ZipFile, is_zipfile
 
 import defusedxml.ElementTree as ET
 
 from pyastrosalt.session import Session
+from pyastrosalt.util.time import SystemTimeProvider, TimeProvider
 
 
 class SubmissionStatus(str, Enum):
@@ -81,16 +84,19 @@ class Submission:
     other properties are updated as well.
     """
 
-    MIN_TIME_BETWEEN_QUERIES = timedelta(seconds=10)
+    _MIN_TIME_BETWEEN_QUERIES = timedelta(seconds=5)
 
-    def __init__(self, identifier: str):
+    _time_provider: TimeProvider = SystemTimeProvider()
+
+    def __init__(self, session: Session, identifier: str):
         """Initializes the instance for a submission identifier.
 
         Args:
+            session: The session to use.
             identifier: A submission identifier.
         """
         self.identifier = identifier
-        self.session = Session.get_instance()
+        self._session = session
         self._log_entries: list[SubmissionLogEntry] = []
         self._status = SubmissionStatus.IN_PROGRESS
         self._error: str | None = None
@@ -132,14 +138,14 @@ class Submission:
         # Avoid repeated queries to the server
         if (
             self._last_queried_at
-            and datetime.now() - self._last_queried_at
-            < Submission.MIN_TIME_BETWEEN_QUERIES
+            and Submission._time_provider.now() - self._last_queried_at
+            < self._MIN_TIME_BETWEEN_QUERIES
         ):
             return
 
         # Query the server for the latest status.
-        self._last_queried_at = datetime.now()
-        response = self.session.get(
+        self._last_queried_at = Submission._time_provider.now()
+        response = self._session.get(
             f"/submissions/{self.identifier}/progress",
             params={"from-entry-number": len(self._log_entries) + 1},
         ).json()
@@ -168,7 +174,10 @@ class Submission:
 
 
 def submit(
-    file: Union[Path, str, BinaryIO], proposal_code: str | None = None
+    session: Session,
+    file: Union[Path, str, BinaryIO],
+    proposal_code: str | None = None,
+    validation_only=False,
 ) -> Submission:
     """Submit a proposal file.
 
@@ -186,32 +195,92 @@ def submit(
     progress.
 
     Args:
+        session: The session to use.
         file: The zip file containing the submitted content.
         proposal_code: The proposal code or None if this is a new submission.
+        validation_only: Whether to validate the proposal only, without actually
+                         submitting it.
 
     Returns:
         A Submission object for tracking the submission progress.
     """
     if not _is_file_like(file):
         with open(file, "rb") as f:  # type:ignore
-            return _submit(f, proposal_code)
+            return _submit(session, f, proposal_code, validation_only)
     else:
-        return _submit(file, proposal_code)  # type:ignore
+        return _submit(session, file, proposal_code, validation_only)  # type:ignore
 
 
-def _submit(file: IO[Any], proposal_code: str | None) -> Submission:
+def validate(
+    session: Session, file: Union[Path, str, BinaryIO], proposal_code: str | None = None
+) -> tuple[bool, list[str]]:
+    """Validate a proposal file.
+
+    The validated file must be a zip file containing files in a format understood by the
+    SALT API. It has to contain an XML file with the whole proposal, blocks or a single
+    block, as well as the required attachments.
+
+    A file path or a file-like object may be passed as the file. In case of a file-like
+    object it must support the seek method.
+
+    If you validate a new proposal, the proposal code must be None. Conversely, if you
+    resubmit (contet for) an existing proposal, the proposal code must be that of the
+    proposal.
+
+    The function waits for the validation to finish. It then returns a boolean
+    indicating whether the file is valid (`True`) or invalid (`False`) as well as a list
+    of errors raised during the validation. This list is empty for valid files.
+
+    As the validated content is sent to the server, it may take a while for this
+    function to return.
+
+    Args:
+        session: Thecsession to use.
+        file: The zip file containing the validated content.
+        proposal_code: The proposal code or None if this is a new proposal.
+
+    Returns:
+        A tuple of a boolean indicating whether the proposal is valid (`True`) or
+        invalid (`False`) and a list of errors raised during the validation.
+    """
+    submission = submit(session, file, proposal_code, True)
+
+    while submission.status == SubmissionStatus.IN_PROGRESS:
+        # Avoid overloading.
+        sleep(0.5)
+
+    if submission.status == SubmissionStatus.SUCCESS:
+        return True, []
+    else:
+        errors = [
+            l.message
+            for l in submission.log
+            if l.message_type == SubmissionMessageType.ERROR
+        ]
+        return False, errors
+
+
+def _submit(
+    session: Session,
+    file: IO[Any],
+    proposal_code: str | None,
+    validation_only: bool = False,
+) -> Submission:
     # Do some sanity checks on the submitted content.
     _check_submitted_content(file, proposal_code)
 
     # Submit the file.
-    session = Session.get_instance()
-    data = {"proposal_code": proposal_code} if proposal_code is not None else {}
+    data = {}
+    if proposal_code:
+        data["proposal_code"] = proposal_code
+    if validation_only:
+        data["validation_only"] = "validation-only"
     response = session.post(
         "/submissions/",
         data=data,
         files={"proposal": file},
     )
-    return Submission(response.json()["submission_identifier"])
+    return Submission(session, response.json()["submission_identifier"])
 
 
 def _check_submitted_content(file: IO[Any], proposal_code: str | None) -> None:
@@ -248,17 +317,17 @@ def _check_submitted_content(file: IO[Any], proposal_code: str | None) -> None:
         if filename == "Proposal.xml":
             with z.open("Proposal.xml", "r") as p:
                 tree = ET.parse(p)
-                code = tree.getroot().attrib.get("code")
-                if (
-                    code
-                    and not code.startswith("Unsubmitted")
-                    and proposal_code != code
-                ):
-                    raise ValueError(
-                        f"The proposal code argument ({proposal_code}) does not match "
-                        f"the proposal code in the submitted Proposal.xml file "
-                        f"({code})."
-                    )
+                code = cast(Element, tree.getroot()).attrib.get("code")
+                message = (
+                    f"The proposal code argument ({proposal_code}) does not match the "
+                    f"proposal code in the submitted Proposal.xml file ({code})."
+                )
+                if proposal_code is not None:
+                    if proposal_code != code:
+                        raise ValueError(message)
+                else:
+                    if code and not code.startswith("Unsubmitted"):
+                        raise ValueError(message)
         file.seek(0)
 
 
