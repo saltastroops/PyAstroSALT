@@ -49,7 +49,7 @@ class Session:
     _base_url: str  # type: ignore
     _requests_session: RequestsSession
 
-    PLAYGROUND_BASE_URL = "https://api-playground.salt.saao.ac.za"
+    PLAYGROUND_BASE_URL = "https://api-playground.salt.ac.za"
     PRODUCTION_BASE_URL = "https://api.salt.ac.za"
 
     def __init__(self):
